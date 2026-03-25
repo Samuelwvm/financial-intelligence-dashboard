@@ -1,0 +1,14 @@
+# --- Interface e Gráficos ---
+streamlit
+plotly
+
+# --- Manipulação de Dados ---
+pandas
+numpy
+
+# --- Coleta de Dados ---
+requests
+yfinance
+
+# --- Utilidades ---
+python-dotenv
