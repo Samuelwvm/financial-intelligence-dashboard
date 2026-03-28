@@ -52,8 +52,12 @@ CSS = """
 }
 
 /* ── CABEÇALHO DE PÁGINA ── */
+/* ── ESCONDE MENU PRINCIPAL ── */
+#MainMenu { visibility: hidden; }
+footer    { visibility: hidden; }
+
 .pg-title {
-    font-size: 28px !important;
+    font-size: 30px !important;
     font-weight: 700 !important;
     color: #e8ecf8 !important;
     margin-bottom: 4px !important;
@@ -73,7 +77,7 @@ CSS = """
     margin: 32px 0 14px;
 }
 .sec-title {
-    font-size: 11px !important;
+    font-size: 16px !important;
     font-weight: 700 !important;
     color: #6a7890 !important;
     text-transform: uppercase;
@@ -118,9 +122,10 @@ CSS = """
     margin-bottom: 6px;
 }
 .mcard-desc {
-    font-size: 10px !important;
-    color: #2a2d3a !important;
-    margin-top: 6px;
+    font-size: 12px !important;
+    color: #5a6480 !important;
+    margin-top: 8px;
+    font-weight: 400 !important;
 }
 
 /* ── CARDS DE ATIVOS ── */
@@ -147,7 +152,7 @@ CSS = """
     color: #b0b8d8 !important;
 }
 .scard-sub {
-    font-size: 11px !important;
+    font-size: 14px !important;
     color: #454a60 !important;
     margin-top: 2px;
 }
@@ -200,9 +205,10 @@ CSS = """
     color: #7eb8f7 !important;
 }
 .eco-desc {
-    font-size: 10px !important;
-    color: #2a4060 !important;
-    margin-top: 4px;
+    font-size: 12px !important;
+    color: #4a6080 !important;
+    margin-top: 5px;
+    font-weight: 400 !important;
 }
 .eco-icon { font-size: 24px; opacity: 0.4; }
 
@@ -214,6 +220,7 @@ CSS = """
 .divider { border: none; border-top: 0.5px solid #191c28; margin: 30px 0; }
 
 /* ── SIDEBAR ── */
+
 [data-testid="stSidebar"] {
     background: #13161f !important;
     border-right: 0.5px solid #1f2333 !important;
@@ -307,15 +314,66 @@ def sec_header(title: str, badge: str = '', dot_color: str = '#5b8ef0') -> str:
         f'{badge_html}</div>'
     )
 
+# ─── LOGOS ─────────────────────────────────────────────────────────────────
+TICKER_LOGOS_CDN = "https://cdn.tickerlogos.com"
+
+SYMBOL_DOMAINS = {
+    'ITUB4.SA': 'itau.com.br',
+    'PETR4.SA': 'petrobras.com.br',
+    'VALE3.SA': 'vale.com',
+    'BPAC11.SA': 'btgpactual.com',
+    'ABEV3.SA': 'ambev.com.br',
+    'WEGE3.SA': 'weg.net',
+    'SANB11.SA': 'santander.com.br',
+    #'BBDC4.SA': 'bradesco.com.br',
+    'BBAS3.SA': 'bb.com.br',
+    'JBSS32.SA': 'jbs.com.br',
+    'AAPL':      'apple.com',
+    'MSFT':      'microsoft.com',
+    'GOOGL':     'google.com',
+    'NVDA':      'nvidia.com',
+    'AMZN':      'amazon.com',
+    'TSLA':      'tesla.com',
+    'META':      'meta.com',
+    #'NU':        'nubank.com',
+    'BTC-USD':   'bitcoin.org',
+    'ETH-USD':   'ethereum.org',
+    '2222.SR':   'aramco.com',
+    'AMD':       'amd.com',
+}
+
 def avatar_html(symbol: str, size: int = 36) -> str:
-    label  = SYMBOL_LABEL.get(symbol, symbol.replace('.SA', ''))
+    """Versão simplificada e robusta do Avatar."""
+    domain = SYMBOL_DOMAINS.get(symbol)
+    label = symbol.replace('.SA', '')
+    initial = label[0].upper()
+
     sector = SYMBOL_SECTOR.get(symbol, 'default')
-    color  = SECTOR_COLORS.get(sector, SECTOR_COLORS['default'])
+    bg_color = SECTOR_COLORS.get(sector, SECTOR_COLORS['default'])
+
+    if not domain:
+        return (
+            f'<div style="width:{size}px; height:{size}px; border-radius:8px; background:{bg_color}; '
+            f'display:flex; align-items:center; justify-content:center; font-size:{size//2}px; '
+            f'font-weight:700; color:#c8d0e8;">{initial}</div>'
+        )
+
+    logo_url = f"https://cdn.tickerlogos.com/{domain}"
     return (
-        f'<div style="width:{size}px;height:{size}px;border-radius:{size//4}px;'
-        f'background:{color};display:flex;align-items:center;justify-content:center;'
-        f'font-size:{size//2-1}px;font-weight:700;color:#c8d0e8;flex-shrink:0;">'
-        f'{label[0].upper()}</div>'
+        f'<div style="width:{size}px; height:{size}px; border-radius:8px; background:white; '
+        f'display:flex; align-items:center; justify-content:center; overflow:hidden; '
+        f'border:0.5px solid #2a3050; position:relative;">'
+        f'<span style="position:absolute; color:#ccc; font-size:10px; z-index:1;">{initial}</span>'
+        f'<img src="{logo_url}" style="width:100%; height:100%; object-fit:contain; '
+        f'position:relative; z-index:2; background:white;"></div>'
+    )
+
+def get_attribution() -> str:
+    """Rodapé com atribuição da fonte dos logos."""
+    return (
+        '<div style="font-size:10px; color:#454a60; text-align:center; margin-top:50px;">'
+        'Logos by <a href="https://www.allinvestview.com/tools/ticker-logos/" '
+        'style="color:#454a60; text-decoration:none;">AllInvestView</a></div>'
     )
 
 def change_span(variation: float, size: int = 12) -> str:
@@ -329,6 +387,16 @@ def fmt_price(price: float, symbol: str) -> str:
     if symbol in ('^BVSP', '^GSPC', '^DJI'):
         return f'{price:,.0f}'
     return f'$&nbsp;{price:,.2f}'
+
+# ─── PLOTLY ────────────────────────────────────────────────────────────────
+
+# Passar em TODOS os st.plotly_chart() — remove toolbar e zoom por scroll
+PLOTLY_CONFIG = {
+    'displayModeBar': False,  # Esconde a barra flutuante de ferramentas
+    'scrollZoom': False,      # Desativa o zoom pelo scroll do mouse
+    'responsive': True,
+    'displaylogo': False,
+}
 
 def plotly_layout(fig, margin=(0, 0, 10, 0)):
     """Tema dark transparente padronizado para todos os gráficos."""
@@ -346,16 +414,15 @@ def plotly_layout(fig, margin=(0, 0, 10, 0)):
             bgcolor='#1e2235', bordercolor='#2a2d3a',
             font=dict(color='#d0d8f0', size=12),
         ),
+        dragmode='pan',       # Clicar e arrastar move no tempo, não faz zoom
     )
-    fig.update_xaxes(showgrid=False, color='#454a60', tickfont=dict(size=11))
+    fig.update_xaxes(
+        showgrid=False, color='#454a60', tickfont=dict(size=11),
+        fixedrange=False,     # Permite navegar no eixo do tempo
+    )
     fig.update_yaxes(
         showgrid=True, gridcolor='#1a1d28', gridwidth=0.5,
         color='#454a60', tickfont=dict(size=11),
+        fixedrange=True,      # Trava o eixo do preço (evita o gráfico "sumir")
     )
     return fig
-
-# Passar em TODOS os st.plotly_chart() — remove toolbar e zoom por scroll
-PLOTLY_CONFIG = {
-    'displayModeBar': False,
-    'scrollZoom': False,
-}

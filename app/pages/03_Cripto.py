@@ -43,62 +43,71 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-class CriptoDashboard:
-    def __init__(self):
-        self.db = DatabaseManager()
+# ─── QUERIES CACHEADAS ─────────────────────────────────────────────────────
 
-    def get_latest(self, symbol: str) -> tuple[float, float]:
-        conn = self.db.get_connection()
-        df = pd.read_sql(
-            "SELECT price, variation FROM assets_history "
-            f"WHERE symbol = '{symbol}' ORDER BY date DESC LIMIT 1", conn)
-        conn.close()
-        if df.empty:
-            return 0.0, 0.0
-        return float(df['price'].iloc[0]), float(df['variation'].iloc[0])
-
-    def get_stats(self, symbol: str, days: int = 30) -> tuple[float, float, float, float]:
-        conn = self.db.get_connection()
-        df = pd.read_sql(
-            f"SELECT price FROM assets_history WHERE symbol = '{symbol}' "
-            f"ORDER BY date DESC LIMIT {days}", conn)
-        conn.close()
-        if len(df) < 2:
-            return 0.0, 0.0, 0.0, 0.0
-        ret = ((df['price'].iloc[0] / df['price'].iloc[-1]) - 1) * 100
-        vol = df['price'].pct_change().std() * np.sqrt(252) * 100
-        return round(ret, 1), round(vol, 1), round(df['price'].max(), 2), round(df['price'].min(), 2)
-
-    def get_history(self, symbol: str, days: int = 30) -> pd.DataFrame:
-        conn = self.db.get_connection()
-        df = pd.read_sql(
-            f"SELECT date, price FROM assets_history "
-            f"WHERE symbol = '{symbol}' AND date >= date('now','-{days} days') "
-            "ORDER BY date", conn)
-        conn.close()
-        return df
+@st.cache_data(ttl=3600)
+def get_latest(symbol: str) -> tuple[float, float]:
+    db = DatabaseManager()
+    conn = db.get_connection()
+    df = pd.read_sql(
+        "SELECT price, variation FROM assets_history "
+        "WHERE symbol = ? ORDER BY date DESC LIMIT 1",
+        conn, params=(symbol,))
+    conn.close()
+    if df.empty:
+        return 0.0, 0.0
+    return float(df['price'].iloc[0]), float(df['variation'].iloc[0])
 
 
-dash = CriptoDashboard()
+@st.cache_data(ttl=3600)
+def get_stats(symbol: str, days: int = 30) -> tuple[float, float, float, float]:
+    db = DatabaseManager()
+    conn = db.get_connection()
+    df = pd.read_sql(
+        "SELECT price FROM assets_history WHERE symbol = ? "
+        "ORDER BY date DESC LIMIT ?",
+        conn, params=(symbol, days))
+    conn.close()
+    if len(df) < 2:
+        return 0.0, 0.0, 0.0, 0.0
+    ret = ((df['price'].iloc[0] / df['price'].iloc[-1]) - 1) * 100
+    vol = df['price'].pct_change().std() * np.sqrt(252) * 100
+    return round(ret, 1), round(vol, 1), round(df['price'].max(), 2), round(df['price'].min(), 2)
+
+
+@st.cache_data(ttl=3600)
+def get_history(symbol: str, days: int = 30) -> pd.DataFrame:
+    db = DatabaseManager()
+    conn = db.get_connection()
+    df = pd.read_sql(
+        "SELECT date, price FROM assets_history "
+        "WHERE symbol = ? AND date >= date('now', ?) "
+        "ORDER BY date",
+        conn, params=(symbol, f'-{days} days'))
+    conn.close()
+    return df
+
+
+# ─── INTERFACE ─────────────────────────────────────────────────────────────
 
 # ── Cabeçalho ────────────────────────────────────────────────────────────
 st.markdown(
     '<div class="pg-title">Criptoativos</div>'
-    '<div class="pg-subtitle">Bitcoin e Ethereum &nbsp;·&nbsp; preços em dólar americano</div>',
+    '<div class="pg-subtitle">Bitcoin e Ethereum &nbsp;·&nbsp; Preços em dólar americano</div>',
     unsafe_allow_html=True,
 )
 
-period_opt = {'7 dias': 7, '30 dias': 30, '90 dias': 90, '1 ano': 365}
+period_opt = {'Hoje': 2, '7 dias': 7, '30 dias': 30, '90 dias': 90, '1 ano': 365}
 period_lbl = st.radio('_', list(period_opt.keys()), horizontal=True,
                       label_visibility='collapsed', index=1)
 days = period_opt[period_lbl]
 st.markdown('<div style="margin-bottom:6px;"></div>', unsafe_allow_html=True)
 
 # ── 1. Cards ─────────────────────────────────────────────────────────────
-btc_p, btc_v                       = dash.get_latest('BTC-USD')
-btc_ret, btc_vol, btc_max, btc_min = dash.get_stats('BTC-USD', days)
-eth_p, eth_v                       = dash.get_latest('ETH-USD')
-eth_ret, eth_vol, eth_max, eth_min = dash.get_stats('ETH-USD', days)
+btc_p, btc_v                       = get_latest('BTC-USD')
+btc_ret, btc_vol, btc_max, btc_min = get_stats('BTC-USD', days)
+eth_p, eth_v                       = get_latest('ETH-USD')
+eth_ret, eth_vol, eth_max, eth_min = get_stats('ETH-USD', days)
 
 def r_cls(v):  return 'up' if v >= 0 else 'down'
 def r_sign(v): return '+' if v >= 0 else ''
@@ -128,7 +137,7 @@ st.markdown(f"""
                 <div class="cripto-stat-val" style="color:#d0d8f0;">$ {btc_min:,.0f}</div>
             </div>
         </div>
-        <div class="badge-desc">armazenamento de valor · emissão limitada a 21 milhões</div>
+        <div class="badge-desc">Armazenamento de valor · emissão limitada a 21 milhões</div>
     </div>
     <div class="cripto-card eth">
         <div class="cripto-symbol" style="color:#7b8ef7;">ETH</div>
@@ -153,7 +162,7 @@ st.markdown(f"""
                 <div class="cripto-stat-val" style="color:#d0d8f0;">$ {eth_min:,.0f}</div>
             </div>
         </div>
-        <div class="badge-desc">plataforma de contratos inteligentes e aplicações descentralizadas</div>
+        <div class="badge-desc">Plataforma de contratos inteligentes e aplicações descentralizadas</div>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -161,10 +170,10 @@ st.markdown(f"""
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
 # ── 2. Gráfico comparativo ───────────────────────────────────────────────
-st.markdown(sec_header('Desempenho Comparativo', f'base 100 · {period_lbl}', '#f7931a'), unsafe_allow_html=True)
+st.markdown(sec_header('Desempenho Comparativo', f'Base 100 · {period_lbl}', '#f7931a'), unsafe_allow_html=True)
 
-btc_hist = dash.get_history('BTC-USD', days)
-eth_hist = dash.get_history('ETH-USD', days)
+btc_hist = get_history('BTC-USD', days)
+eth_hist = get_history('ETH-USD', days)
 
 if not btc_hist.empty and not eth_hist.empty:
     btc_hist['ativo'] = 'Bitcoin (BTC)'
@@ -193,7 +202,7 @@ for col, sym, name, color, fill in [
     (col_a, 'BTC-USD', 'Bitcoin',  '#f7931a', 'rgba(247,147,26,0.07)'),
     (col_b, 'ETH-USD', 'Ethereum', '#7b8ef7', 'rgba(123,142,247,0.07)'),
 ]:
-    hist = dash.get_history(sym, days)
+    hist = get_history(sym, days)
     with col:
         st.markdown(
             f'<div style="font-size:12px;font-weight:600;color:#6a7890;margin-bottom:8px;">{name}</div>',

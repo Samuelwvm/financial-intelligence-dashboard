@@ -77,6 +77,7 @@ if __name__ == "__main__":
         {'symbol': 'BBDC4.SA', 'name': 'Bradesco', 'category': 'Ação BR', 'sector': 'Financeiro'},
         {'symbol': 'BBAS3.SA', 'name': 'Banco do Brasil', 'category': 'Ação BR', 'sector': 'Financeiro'},
         {'symbol': 'SANB11.SA', 'name': 'Santander BR', 'category': 'Ação BR', 'sector': 'Financeiro'},
+        {'symbol': 'JBSS32.SA', 'name': 'JBS', 'category': 'Ação BR', 'sector': 'Alimentos'},
         
         # EUA
         {'symbol': 'AAPL', 'name': 'Apple', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
@@ -87,6 +88,8 @@ if __name__ == "__main__":
         {'symbol': 'TSLA', 'name': 'Tesla', 'category': 'Ação EUA', 'sector': 'Automotivo'},
         {'symbol': 'META', 'name': 'Meta', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
         {'symbol': 'NU', 'name': 'Nubank', 'category': 'Ação EUA', 'sector': 'Financeiro'},
+        {'symbol': 'AMD', 'name': 'Advanced Micro Devices', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
+        {'symbol': '2222.SR', 'name': 'Saudi Aramco', 'category': 'Ação Mundo', 'sector': 'Energia'},
         
         # COMMODITIES & ÍNDICES
         {'symbol': 'CL=F', 'name': 'Petróleo Brent', 'category': 'Commodity', 'sector': 'Energia'},

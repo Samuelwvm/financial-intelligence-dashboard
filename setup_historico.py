@@ -26,6 +26,7 @@ def run_initial_setup():
         {'symbol': 'BBDC4.SA', 'name': 'Bradesco', 'category': 'Ação BR', 'sector': 'Financeiro'},
         {'symbol': 'BBAS3.SA', 'name': 'Banco do Brasil', 'category': 'Ação BR', 'sector': 'Financeiro'},
         {'symbol': 'SANB11.SA', 'name': 'Santander BR', 'category': 'Ação BR', 'sector': 'Financeiro'},
+        {'symbol': 'JBSS32.SA', 'name': 'JBS', 'category': 'Ação BR', 'sector': 'Alimentos'},
         # EUA
         {'symbol': 'AAPL', 'name': 'Apple', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
         {'symbol': 'GOOGL', 'name': 'Alphabet (Google)', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
@@ -35,11 +36,14 @@ def run_initial_setup():
         {'symbol': 'TSLA', 'name': 'Tesla', 'category': 'Ação EUA', 'sector': 'Automotivo'},
         {'symbol': 'META', 'name': 'Meta', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
         {'symbol': 'NU', 'name': 'Nubank', 'category': 'Ação EUA', 'sector': 'Financeiro'},
+        {'symbol': 'AMD', 'name': 'Advanced Micro Devices', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
+        {'symbol': '2222.SR', 'name': 'Saudi Aramco', 'category': 'Ação Mundo', 'sector': 'Energia'},
         # COMMODITIES, ÍNDICES, MOEDAS E CRIPTO
         {'symbol': 'CL=F', 'name': 'Petróleo Brent', 'category': 'Commodity', 'sector': 'Energia'},
         {'symbol': 'GC=F', 'name': 'Ouro', 'category': 'Commodity', 'sector': 'Segurança'},
         {'symbol': '^BVSP', 'name': 'Ibovespa', 'category': 'Índice', 'sector': 'Brasil'},
         {'symbol': '^GSPC', 'name': 'S&P 500', 'category': 'Índice', 'sector': 'EUA'},
+        {'symbol': '^DJI',  'name': 'Dow Jones', 'category': 'Índice', 'sector': 'EUA'},
         {'symbol': 'USDBRL=X', 'name': 'Dólar/Real', 'category': 'Moeda', 'sector': 'Câmbio'},
         {'symbol': 'EURBRL=X', 'name': 'Euro/Real', 'category': 'Moeda', 'sector': 'Câmbio'},
         {'symbol': 'BTC-USD', 'name': 'Bitcoin', 'category': 'Cripto', 'sector': 'Tecnologia'},
@@ -65,3 +69,5 @@ def run_initial_setup():
 
 if __name__ == "__main__":
     run_initial_setup()
+
+

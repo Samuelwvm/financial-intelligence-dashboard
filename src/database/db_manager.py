@@ -5,7 +5,7 @@ class DatabaseManager:
     def __init__(self):
         # Localiza a pasta data/ na raiz do projeto
         self.project_root = Path(__file__).parent.parent.parent
-        self.db_path = self.project_root / "data" / "finance_v2.db"
+        self.db_path = self.project_root / "data" / "finance.db"
         self.schema_path = Path(__file__).parent / "schema.sql"
         
         # Garante que a pasta existe
