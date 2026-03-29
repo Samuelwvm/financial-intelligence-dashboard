@@ -1,13 +1,13 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 from pathlib import Path
 import sys
 
 root = Path(__file__).parent.parent
 sys.path.append(str(root))
-from src.database.db_manager import DatabaseManager
+
+from src.database.queries import get_latest, get_ohlc_stats, get_history
 from src._ui import CSS, sec_header, change_span, plotly_layout, PLOTLY_CONFIG
 
 st.set_page_config(page_title="Cripto · Radar Financeiro", layout="wide")
@@ -43,54 +43,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# ─── QUERIES CACHEADAS ─────────────────────────────────────────────────────
-
-@st.cache_data(ttl=3600)
-def get_latest(symbol: str) -> tuple[float, float]:
-    db = DatabaseManager()
-    conn = db.get_connection()
-    df = pd.read_sql(
-        "SELECT price, variation FROM assets_history "
-        "WHERE symbol = ? ORDER BY date DESC LIMIT 1",
-        conn, params=(symbol,))
-    conn.close()
-    if df.empty:
-        return 0.0, 0.0
-    return float(df['price'].iloc[0]), float(df['variation'].iloc[0])
-
-
-@st.cache_data(ttl=3600)
-def get_stats(symbol: str, days: int = 30) -> tuple[float, float, float, float]:
-    db = DatabaseManager()
-    conn = db.get_connection()
-    df = pd.read_sql(
-        "SELECT price FROM assets_history WHERE symbol = ? "
-        "ORDER BY date DESC LIMIT ?",
-        conn, params=(symbol, days))
-    conn.close()
-    if len(df) < 2:
-        return 0.0, 0.0, 0.0, 0.0
-    ret = ((df['price'].iloc[0] / df['price'].iloc[-1]) - 1) * 100
-    vol = df['price'].pct_change().std() * np.sqrt(252) * 100
-    return round(ret, 1), round(vol, 1), round(df['price'].max(), 2), round(df['price'].min(), 2)
-
-
-@st.cache_data(ttl=3600)
-def get_history(symbol: str, days: int = 30) -> pd.DataFrame:
-    db = DatabaseManager()
-    conn = db.get_connection()
-    df = pd.read_sql(
-        "SELECT date, price FROM assets_history "
-        "WHERE symbol = ? AND date >= date('now', ?) "
-        "ORDER BY date",
-        conn, params=(symbol, f'-{days} days'))
-    conn.close()
-    return df
-
-
 # ─── INTERFACE ─────────────────────────────────────────────────────────────
 
-# ── Cabeçalho ────────────────────────────────────────────────────────────
 st.markdown(
     '<div class="pg-title">Criptoativos</div>'
     '<div class="pg-subtitle">Bitcoin e Ethereum &nbsp;·&nbsp; Preços em dólar americano</div>',
@@ -105,12 +59,14 @@ st.markdown('<div style="margin-bottom:6px;"></div>', unsafe_allow_html=True)
 
 # ── 1. Cards ─────────────────────────────────────────────────────────────
 btc_p, btc_v                       = get_latest('BTC-USD')
-btc_ret, btc_vol, btc_max, btc_min = get_stats('BTC-USD', days)
+btc_ret, btc_vol, btc_max, btc_min = get_ohlc_stats('BTC-USD', days)
 eth_p, eth_v                       = get_latest('ETH-USD')
-eth_ret, eth_vol, eth_max, eth_min = get_stats('ETH-USD', days)
+eth_ret, eth_vol, eth_max, eth_min = get_ohlc_stats('ETH-USD', days)
+
 
 def r_cls(v):  return 'up' if v >= 0 else 'down'
 def r_sign(v): return '+' if v >= 0 else ''
+
 
 st.markdown(f"""
 <div class="cripto-grid">

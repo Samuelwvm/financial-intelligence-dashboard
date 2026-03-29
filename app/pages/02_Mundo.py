@@ -1,13 +1,15 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
 from pathlib import Path
 import sys
 
 root = Path(__file__).parent.parent
 sys.path.append(str(root))
-from src.database.db_manager import DatabaseManager
+
+from src.database.queries import (
+    get_us_stocks, get_commodities_indices, get_latest, get_stats, get_history,
+)
 from src._ui import (
     CSS, sec_header, avatar_html, change_span,
     plotly_layout, PLOTLY_CONFIG, SYMBOL_LABEL,
@@ -15,80 +17,6 @@ from src._ui import (
 
 st.set_page_config(page_title="Mundo · Radar Financeiro", layout="wide")
 st.markdown(CSS, unsafe_allow_html=True)
-
-
-# ─── QUERIES CACHEADAS ─────────────────────────────────────────────────────
-
-@st.cache_data(ttl=3600)
-def get_us_stocks() -> pd.DataFrame:
-    db = DatabaseManager()
-    conn = db.get_connection()
-    df = pd.read_sql(
-        "SELECT symbol, name FROM assets_metadata "
-        "WHERE category IN ('Ação EUA', 'Ação Mundo') ORDER BY name",
-        conn)
-    conn.close()
-    return df
-
-
-@st.cache_data(ttl=3600)
-def get_commodities_indices() -> pd.DataFrame:
-    """Retorna commodities e índices disponíveis no banco."""
-    db = DatabaseManager()
-    conn = db.get_connection()
-    df = pd.read_sql(
-        "SELECT symbol, name, category FROM assets_metadata "
-        "WHERE category IN ('Commodity', 'Índice') ORDER BY category, name",
-        conn)
-    conn.close()
-    return df
-
-
-@st.cache_data(ttl=3600)
-def get_latest(symbol: str) -> tuple[float, float]:
-    db = DatabaseManager()
-    conn = db.get_connection()
-    df = pd.read_sql(
-        "SELECT price, variation FROM assets_history "
-        "WHERE symbol = ? ORDER BY date DESC LIMIT 1",
-        conn, params=(symbol,))
-    conn.close()
-    if df.empty:
-        return 0.0, 0.0
-    return float(df['price'].iloc[0]), float(df['variation'].iloc[0])
-
-
-@st.cache_data(ttl=3600)
-def get_stats(symbol: str, days: int = 30) -> tuple[float, float]:
-    db = DatabaseManager()
-    conn = db.get_connection()
-    query_days = 2 if days <= 2 else days
-    df = pd.read_sql(
-        "SELECT price FROM assets_history WHERE symbol = ? "
-        "ORDER BY date DESC LIMIT ?",
-        conn, params=(symbol, query_days))
-    conn.close()
-    if len(df) < 2:
-        return 0.0, 0.0
-    ret = ((df['price'].iloc[0] / df['price'].iloc[-1]) - 1) * 100
-    vol = df['price'].pct_change().std() * np.sqrt(252) * 100
-    if pd.isna(vol):
-        vol = 0.0
-    return round(ret, 1), round(vol, 1)
-
-
-@st.cache_data(ttl=3600)
-def get_history(symbol: str, days: int = 30) -> pd.DataFrame:
-    db = DatabaseManager()
-    conn = db.get_connection()
-    chart_days = 7 if days <= 2 else days
-    df = pd.read_sql(
-        "SELECT date, price FROM assets_history "
-        "WHERE symbol = ? AND date >= date('now', ?) "
-        "ORDER BY date",
-        conn, params=(symbol, f'-{chart_days} days'))
-    conn.close()
-    return df
 
 
 # ─── HELPERS ───────────────────────────────────────────────────────────────
@@ -222,7 +150,7 @@ for col, sym, name, color, fill, fmt in [
 
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
-# ── 3. Ações Globais — seletor de tempo independente ────────────────────
+# ── 3. Ações Globais ─────────────────────────────────────────────────────
 st.markdown(sec_header('Ações Globais', 'EUA · Mundo'), unsafe_allow_html=True)
 
 period_acoes, days_acoes = _period_radio('radio_acoes', index=2)
@@ -301,9 +229,7 @@ comm_cat_map  = dict(zip(comm_df['symbol'], comm_df['category']))
 
 
 def _comm_label(s: str) -> str:
-    cat  = comm_cat_map.get(s, '')
-    name = comm_name_map.get(s, s)
-    return f"{name}  ·  {cat}"
+    return f"{comm_name_map.get(s, s)}  ·  {comm_cat_map.get(s, '')}"
 
 
 col_sel2, col_period2 = st.columns([3, 1], gap='medium')
@@ -320,7 +246,6 @@ with col_period2:
     )
     days_comm = PERIOD_OPT[period_comm]
 
-# Cor e formato adaptados ao tipo de ativo (Índice vs Commodity)
 is_index    = comm_cat_map.get(sel_comm, '') == 'Índice'
 chart_color = '#7eb8f7' if is_index else '#e0b84c'
 chart_fill  = 'rgba(94,142,240,0.08)' if is_index else 'rgba(224,184,76,0.08)'

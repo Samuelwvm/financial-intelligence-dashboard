@@ -295,6 +295,127 @@ div[data-testid="stExpander"] details > div {
     padding: 4px 18px 16px !important;
     border-top: 0.5px solid #1a1d28;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ── RESPONSIVIDADE ──────────────────────────────────────────
+   Breakpoints:
+     768px → tablet  (2–3 colunas)
+     480px → celular (1–2 colunas)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── TABLET (≤ 768px) ── */
+@media (max-width: 768px) {
+
+    /* Padding da área principal: reduz laterais em telas menores */
+    .main .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        padding-top: 1.25rem !important;
+    }
+
+    /* Título de página levemente menor */
+    .pg-title {
+        font-size: 24px !important;
+    }
+    .pg-subtitle {
+        font-size: 13px !important;
+        margin-bottom: 20px !important;
+    }
+
+    /* Pulso do Mercado: 5 colunas → 3 colunas */
+    .market-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
+
+    /* Tamanho do valor no mcard levemente menor */
+    .mcard-value {
+        font-size: 18px !important;
+    }
+
+    /* Economia: 3 colunas → 2 colunas */
+    .eco-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Ícone decorativo some em telas menores (evita layout quebrado) */
+    .eco-icon {
+        display: none !important;
+    }
+
+    /* Cripto (definido inline em 03_Cripto.py, sobrescrito aqui globalmente) */
+    .cripto-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Seção header: badge some, título fica sozinho */
+    .sec-badge {
+        display: none !important;
+    }
+}
+
+/* ── CELULAR (≤ 480px) ── */
+@media (max-width: 480px) {
+
+    /* Padding mínimo nas laterais */
+    .main .block-container {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    /* Título ainda menor */
+    .pg-title {
+        font-size: 20px !important;
+    }
+
+    /* Pulso do Mercado: 3 → 2 colunas */
+    .market-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    /* Valor do mcard compacto */
+    .mcard {
+        padding: 14px 12px !important;
+    }
+    .mcard-value {
+        font-size: 16px !important;
+    }
+    .mcard-desc {
+        display: none !important;
+    }
+
+    /* Cards de ativos: força 1 coluna em telas muito pequenas */
+    .stock-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Economia: 2 → 1 coluna */
+    .eco-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Card de economia: padding compacto */
+    .eco-card {
+        padding: 14px 16px !important;
+    }
+    .eco-value {
+        font-size: 22px !important;
+    }
+
+    /* Cabeçalho de seção: letra menor */
+    .sec-title {
+        font-size: 13px !important;
+        letter-spacing: 1px;
+    }
+
+    /* Expander: padding interno compacto */
+    div[data-testid="stExpander"] details > summary {
+        padding: 12px 14px !important;
+        font-size: 13px !important;
+    }
+    div[data-testid="stExpander"] details > div {
+        padding: 4px 14px 14px !important;
+    }
+}
 </style>
 """
 
@@ -325,7 +446,7 @@ SYMBOL_DOMAINS = {
     'ABEV3.SA': 'ambev.com.br',
     'WEGE3.SA': 'weg.net',
     'SANB11.SA': 'santander.com.br',
-    #'BBDC4.SA': 'bradesco.com.br',
+    #'BBDC4.SA': 'bradesco.com.br',  # 404 na CDN — usa fallback com inicial
     'BBAS3.SA': 'bb.com.br',
     'JBSS32.SA': 'jbs.com.br',
     'AAPL':      'apple.com',
@@ -335,7 +456,7 @@ SYMBOL_DOMAINS = {
     'AMZN':      'amazon.com',
     'TSLA':      'tesla.com',
     'META':      'meta.com',
-    #'NU':        'nubank.com',
+    #'NU':        'nubank.com',       # 404 na CDN — usa fallback com inicial
     'BTC-USD':   'bitcoin.org',
     'ETH-USD':   'ethereum.org',
     '2222.SR':   'aramco.com',
@@ -343,33 +464,47 @@ SYMBOL_DOMAINS = {
 }
 
 def avatar_html(symbol: str, size: int = 36) -> str:
-    """Versão simplificada e robusta do Avatar."""
-    domain = SYMBOL_DOMAINS.get(symbol)
-    label = symbol.replace('.SA', '')
-    initial = label[0].upper()
+    """
+    Gera o avatar do ativo com logo da CDN TickerLogos.
 
-    sector = SYMBOL_SECTOR.get(symbol, 'default')
+    Duas situações:
+    1. Sem domínio mapeado (ou domínio comentado por 404) →
+       quadrado colorido (cor do setor) com a inicial do ticker.
+    2. Com domínio mapeado →
+       logo da CDN sobre fundo branco.
+
+    Nota: onerror JavaScript não funciona dentro do st.markdown()
+    do Streamlit (iframe sandboxado). Por isso domínios que retornam
+    404 devem ser comentados em SYMBOL_DOMAINS para usar o fallback.
+    """
+    domain   = SYMBOL_DOMAINS.get(symbol)
+    label    = symbol.replace('.SA', '')
+    initial  = label[0].upper()
+    sector   = SYMBOL_SECTOR.get(symbol, 'default')
     bg_color = SECTOR_COLORS.get(sector, SECTOR_COLORS['default'])
 
+    # Sem domínio mapeado: fallback colorido com inicial
     if not domain:
         return (
-            f'<div style="width:{size}px; height:{size}px; border-radius:8px; background:{bg_color}; '
-            f'display:flex; align-items:center; justify-content:center; font-size:{size//2}px; '
+            f'<div style="width:{size}px; height:{size}px; border-radius:8px; '
+            f'background:{bg_color}; display:flex; align-items:center; '
+            f'justify-content:center; font-size:{size//2}px; '
             f'font-weight:700; color:#c8d0e8;">{initial}</div>'
         )
 
+    # Com domínio: logo da CDN sobre fundo branco
     logo_url = f"https://cdn.tickerlogos.com/{domain}"
     return (
-        f'<div style="width:{size}px; height:{size}px; border-radius:8px; background:white; '
-        f'display:flex; align-items:center; justify-content:center; overflow:hidden; '
-        f'border:0.5px solid #2a3050; position:relative;">'
-        f'<span style="position:absolute; color:#ccc; font-size:10px; z-index:1;">{initial}</span>'
-        f'<img src="{logo_url}" style="width:100%; height:100%; object-fit:contain; '
-        f'position:relative; z-index:2; background:white;"></div>'
+        f'<div style="width:{size}px; height:{size}px; border-radius:8px; '
+        f'background:white; display:flex; align-items:center; '
+        f'justify-content:center; overflow:hidden; border:0.5px solid #2a3050;">'
+        f'<img src="{logo_url}" alt="{initial}" '
+        f'style="width:100%; height:100%; object-fit:contain;">'
+        f'</div>'
     )
 
 def get_attribution() -> str:
-    """Rodapé com atribuição da fonte dos logos."""
+    """Rodapé com atribuição da fonte dos logos (obrigatório pela CDN)."""
     return (
         '<div style="font-size:10px; color:#454a60; text-align:center; margin-top:50px;">'
         'Logos by <a href="https://www.allinvestview.com/tools/ticker-logos/" '
@@ -392,8 +527,8 @@ def fmt_price(price: float, symbol: str) -> str:
 
 # Passar em TODOS os st.plotly_chart() — remove toolbar e zoom por scroll
 PLOTLY_CONFIG = {
-    'displayModeBar': False,  # Esconde a barra flutuante de ferramentas
-    'scrollZoom': False,      # Desativa o zoom pelo scroll do mouse
+    'displayModeBar': False,
+    'scrollZoom': False,
     'responsive': True,
     'displaylogo': False,
 }
@@ -414,15 +549,15 @@ def plotly_layout(fig, margin=(0, 0, 10, 0)):
             bgcolor='#1e2235', bordercolor='#2a2d3a',
             font=dict(color='#d0d8f0', size=12),
         ),
-        dragmode='pan',       # Clicar e arrastar move no tempo, não faz zoom
+        dragmode='pan',
     )
     fig.update_xaxes(
         showgrid=False, color='#454a60', tickfont=dict(size=11),
-        fixedrange=False,     # Permite navegar no eixo do tempo
+        fixedrange=True,
     )
     fig.update_yaxes(
         showgrid=True, gridcolor='#1a1d28', gridwidth=0.5,
         color='#454a60', tickfont=dict(size=11),
-        fixedrange=True,      # Trava o eixo do preço (evita o gráfico "sumir")
+        fixedrange=True,
     )
     return fig
