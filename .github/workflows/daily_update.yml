@@ -1,0 +1,35 @@
+name: Daily Market Update
+
+on:
+  schedule:
+    - cron: '0 1 * * 1-5'  # 22h horário de Brasília (UTC-3), dias úteis
+  workflow_dispatch:         # permite rodar manualmente pelo GitHub
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Rodar atualização diária
+        run: python run_all.py
+
+      - name: Commitar banco atualizado
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/finance.db
+          git diff --staged --quiet || git commit -m "chore: atualização diária $(date +'%Y-%m-%d')"
+          git push
+
+# Nota: Certifique-se de que o .gitignore possui a exceção !data/finance.db para que o banco de dados seja versionado.
