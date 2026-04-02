@@ -1,14 +1,14 @@
+# views /05_Entenda.py
+# Página de glossário interativo — termos financeiros explicados de forma simples e visual.
+
 import streamlit as st
 from pathlib import Path
 import sys
-import base64
 
-root = Path(__file__).parent.parent
-sys.path.append(str(root))
-from src._ui import CSS, sec_header
+#root = Path(__file__).parent.parent.parent
+#sys.path.append(str(root))
 
-st.set_page_config(page_title="Entenda - Radar Financeiro", layout="wide")
-st.markdown(CSS, unsafe_allow_html=True)
+from src._ui import sec_header, page_footer
 
 st.markdown("""
 <style>
@@ -153,7 +153,8 @@ GLOSSARIO = [
      'ex':'Ação a R\$ 50 x 1 bilhão de ações = Market Cap de R\$ 50 bilhões.'},
 ]
 
-# Render
+# ─── RENDER ────────────────────────────────────────────────────────────────
+
 st.markdown(
     '<div class="pg-title">Entenda o Mercado</div>'
     '<div class="pg-subtitle">Glossario interativo - clique em qualquer termo para expandir</div>',
@@ -193,3 +194,5 @@ else:
                 f'<div class="termo-exemplo">{item["ex"]}</div>',
                 unsafe_allow_html=True,
             )
+
+st.markdown(page_footer(), unsafe_allow_html=True)

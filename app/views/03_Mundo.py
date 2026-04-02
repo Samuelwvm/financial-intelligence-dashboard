@@ -1,32 +1,26 @@
+# views/03_Mundo.py
+# Página do mercado global — referências internacionais, câmbio,
+# ações americanas e análise de commodities e índices.
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from pathlib import Path
-import sys
-
-root = Path(__file__).parent.parent
-sys.path.append(str(root))
 
 from src.database.queries import (
     get_us_stocks, get_commodities_indices, get_latest, get_stats, get_history,
 )
 from src._ui import (
-    CSS, sec_header, avatar_html, change_span,
-    plotly_layout, PLOTLY_CONFIG, SYMBOL_LABEL,
+    sec_header, avatar_html, change_span,
+    fmt_price, plotly_layout, PLOTLY_CONFIG, SYMBOL_LABEL, page_footer,
+    PERIOD_OPT,
 )
 
-st.set_page_config(page_title="Mundo · Radar Financeiro", layout="wide")
-st.markdown(CSS, unsafe_allow_html=True)
 
-
-# ─── HELPERS ───────────────────────────────────────────────────────────────
-
-PERIOD_OPT = {'Hoje': 2, '7 dias': 7, '30 dias': 30, '90 dias': 90, '1 ano': 365}
-
+# ─── HELPERS LOCAIS ────────────────────────────────────────────────────────
 
 def _period_radio(key: str, index: int = 2) -> tuple[str, int]:
-    """Seletor de período reutilizável — retorna (label, days)."""
-    _, col_radio = st.columns([2.4, 1])
+    """Seletor de período reutilizável nesta página — retorna (label, days)."""
+    _, col_radio = st.columns([2.18, 1])
     with col_radio:
         lbl = st.radio(
             '_', list(PERIOD_OPT.keys()),
@@ -35,31 +29,39 @@ def _period_radio(key: str, index: int = 2) -> tuple[str, int]:
         )
     return lbl, PERIOD_OPT[lbl]
 
-
 def _fmt_lbl(period_lbl: str) -> str:
-    return period_lbl.lower().replace(' dias', 'd').replace(' ano', 'a')
+    """Converte o label do período para forma curta usada dentro dos cards."""
+    return period_lbl.lower().replace(' dias', 'd').replace(' ano', 'a').replace('último dia', '1d')
 
+def _info_card(symbol: str, days: int, period_lbl: str, currency: str = 'USD', label: str = None) -> None:
+    """Card lateral com preço, variação, retorno e volatilidade.
 
-def _info_card(symbol: str, days: int, period_lbl: str, currency: str = 'USD') -> None:
-    """Card lateral padronizado com preço, retorno e volatilidade."""
+    O parâmetro label permite sobrescrever o nome exibido — útil para
+    commodities e índices cujos tickers brutos (GC=F, ^BVSP) não ficam
+    bem como título do card.
+
+    Nota: a variável local fmt_val foi nomeada assim intencionalmente para
+    não colidir com a função fmt_price importada de _ui.
+    """
     price, var = get_latest(symbol)
     ret, vol   = get_stats(symbol, days)
     r_cls      = 'up' if ret >= 0 else 'down'
     r_sign     = '+' if ret >= 0 else ''
-    lbl        = SYMBOL_LABEL.get(symbol, symbol)
+    lbl        = label if label else SYMBOL_LABEL.get(symbol, symbol)
     lbl_period = _fmt_lbl(period_lbl)
 
     if currency == 'PTS':
-        prefix, fmt_price = '', f'{price:,.0f}'
+        prefix, fmt_val = '', f'{price:,.0f}'
     elif currency == 'BRL':
-        prefix, fmt_price = 'R$&nbsp;', f'{price:,.2f}'
+        br = f"{price:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        prefix, fmt_val = 'R$&nbsp;', br
     else:
-        prefix, fmt_price = '$&nbsp;', f'{price:,.2f}'
+        prefix, fmt_val = '$&nbsp;', f'{price:,.2f}'
 
     st.markdown(f"""
     <div style="background:#161922;border:0.5px solid #1f2333;border-radius:10px;padding:20px;">
         <div style="font-size:10px;color:#454a60;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">{lbl}</div>
-        <div style="font-size:26px;font-weight:700;color:#d0d8f0;margin-bottom:5px;">{prefix}{fmt_price}</div>
+        <div style="font-size:26px;font-weight:700;color:#d0d8f0;margin-bottom:5px;">{prefix}{fmt_val}</div>
         {change_span(var, size=13)}
         <hr style="border:none;border-top:0.5px solid #1f2333;margin:14px 0;">
         <div style="display:flex;gap:8px;">
@@ -72,7 +74,7 @@ def _info_card(symbol: str, days: int, period_lbl: str, currency: str = 'USD') -
     """, unsafe_allow_html=True)
 
 
-# ─── INTERFACE ─────────────────────────────────────────────────────────────
+# ─── CABEÇALHO ─────────────────────────────────────────────────────────────
 
 st.markdown(
     '<div class="pg-title">Mercado Global</div>'
@@ -80,29 +82,25 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── 1. Referências Globais ───────────────────────────────────────────────
-st.markdown(sec_header('Referências Globais', 'Atualizado hoje', '#4caf7d'), unsafe_allow_html=True)
+# ── 1. REFERÊNCIAS GLOBAIS ───────────────────────────────────────────────
+# fmt_price trata cada símbolo corretamente: pontos para índices, BRL para câmbio, USD para ouro.
+st.markdown(sec_header('Referências Globais', 'Atualizado diariamente', '#4caf7d'), unsafe_allow_html=True)
 
 REF = [
-    ('^GSPC',    'S&P 500',   '500 maiores EUA',    'pts'),
-    ('^DJI',     'Dow Jones', '30 gigantes EUA',    'pts'),
-    ('USDBRL=X', 'Dólar',     'USD · comercial',    'brl'),
-    ('EURBRL=X', 'Euro',      'EUR · zona do euro', 'brl'),
-    ('GC=F',     'Ouro',      'XAU/USD',            'usd'),
+    ('^GSPC',    'S&P 500',   '500 maiores EUA',    ),
+    ('^DJI',     'Dow Jones', '30 gigantes EUA',    ),
+    ('USDBRL=X', 'Dólar',     'USD · comercial',    ),
+    ('EURBRL=X', 'Euro',      'EUR · zona do euro', ),
+    ('GC=F',     'Ouro',      'XAU/USD',            ),
 ]
 
 ref_cards = ''
-for sym, label, desc, kind in REF:
+for sym, label, desc in REF:
     price, var = get_latest(sym)
-    val_str = (
-        f'{price:,.0f}' if kind == 'pts'
-        else f'R$&nbsp;{price:.2f}' if kind == 'brl'
-        else f'$&nbsp;{price:,.2f}'
-    )
     ref_cards += (
         f'<div class="mcard">'
         f'<div class="mcard-label">{label}</div>'
-        f'<div class="mcard-value">{val_str}</div>'
+        f'<div class="mcard-value">{fmt_price(price, sym)}</div>'
         f'{change_span(var)}'
         f'<div class="mcard-desc">{desc}</div>'
         f'</div>'
@@ -112,7 +110,7 @@ st.markdown(
     unsafe_allow_html=True)
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
-# ── 2. Câmbio ───────────────────────────────────────────────────────────
+# ── 2. CÂMBIO VS REAL ───────────────────────────────────────────────────
 st.markdown(sec_header('Câmbio vs Real', 'Histórico'), unsafe_allow_html=True)
 
 period_cambio, days_cambio = _period_radio('radio_cambio', index=2)
@@ -150,7 +148,7 @@ for col, sym, name, color, fill, fmt in [
 
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
-# ── 3. Ações Globais ─────────────────────────────────────────────────────
+# ── 3. AÇÕES GLOBAIS ─────────────────────────────────────────────────────
 st.markdown(sec_header('Ações Globais', 'EUA · Mundo'), unsafe_allow_html=True)
 
 period_acoes, days_acoes = _period_radio('radio_acoes', index=2)
@@ -185,7 +183,7 @@ for _, row in stocks_df.iterrows():
 st.markdown(f'<div class="stock-grid">{cards}</div>', unsafe_allow_html=True)
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
-# ── 4. Análise Individual · Ações ────────────────────────────────────────
+# ── 4. ANÁLISE INDIVIDUAL · AÇÕES ────────────────────────────────────────
 st.markdown(sec_header('Análise Individual · Ações'), unsafe_allow_html=True)
 
 col_sel, col_period = st.columns([3, 1], gap='medium')
@@ -220,17 +218,15 @@ else:
 
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
-# ── 5. Análise Individual · Commodities & Índices ────────────────────────
+# ── 5. ANÁLISE INDIVIDUAL · COMMODITIES & ÍNDICES ────────────────────────
 st.markdown(sec_header('Análise Individual · Commodities & Índices', dot_color='#e0b84c'), unsafe_allow_html=True)
 
 comm_df       = get_commodities_indices()
 comm_name_map = dict(zip(comm_df['symbol'], comm_df['name']))
 comm_cat_map  = dict(zip(comm_df['symbol'], comm_df['category']))
 
-
 def _comm_label(s: str) -> str:
     return f"{comm_name_map.get(s, s)}  ·  {comm_cat_map.get(s, '')}"
-
 
 col_sel2, col_period2 = st.columns([3, 1], gap='medium')
 with col_sel2:
@@ -246,6 +242,7 @@ with col_period2:
     )
     days_comm = PERIOD_OPT[period_comm]
 
+# is_index drive o estilo visual e o tipo de dado (pontos vs USD)
 is_index    = comm_cat_map.get(sel_comm, '') == 'Índice'
 chart_color = '#7eb8f7' if is_index else '#e0b84c'
 chart_fill  = 'rgba(94,142,240,0.08)' if is_index else 'rgba(224,184,76,0.08)'
@@ -265,6 +262,10 @@ if not hist_comm.empty:
             hovertemplate=f'<b>%{{x}}</b><br>{hover_fmt}<extra></extra>')
         st.plotly_chart(plotly_layout(fig2), use_container_width=True, config=PLOTLY_CONFIG)
     with col_info2:
-        _info_card(sel_comm, days_comm, period_comm, currency=currency)
+        # Passa o nome legível para evitar exibir o ticker bruto (ex: GC=F, ^GSPC)
+        _info_card(sel_comm, days_comm, period_comm, currency=currency,
+                   label=comm_name_map.get(sel_comm))
 else:
     st.info('Dados históricos não disponíveis para este ativo.')
+
+st.markdown(page_footer(), unsafe_allow_html=True)

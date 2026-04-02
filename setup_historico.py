@@ -36,7 +36,7 @@ def run_initial_setup():
         {'symbol': 'TSLA', 'name': 'Tesla', 'category': 'Ação EUA', 'sector': 'Automotivo'},
         {'symbol': 'META', 'name': 'Meta', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
         {'symbol': 'NU', 'name': 'Nubank', 'category': 'Ação EUA', 'sector': 'Financeiro'},
-        {'symbol': 'AMD', 'name': 'Advanced Micro Devices', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
+        {'symbol': 'AMD', 'name': 'Advanced Micro Dev.', 'category': 'Ação EUA', 'sector': 'Tecnologia'},
         {'symbol': '2222.SR', 'name': 'Saudi Aramco', 'category': 'Ação Mundo', 'sector': 'Energia'},
         # COMMODITIES, ÍNDICES, MOEDAS E CRIPTO
         {'symbol': 'CL=F', 'name': 'Petróleo Brent', 'category': 'Commodity', 'sector': 'Energia'},

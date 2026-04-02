@@ -1,3 +1,5 @@
+# Coleção de dados do Banco Central do Brasil (BCB) para indicadores macroeconômicos.
+
 import pandas as pd
 import requests
 import sys
@@ -12,9 +14,11 @@ class BCBCollector:
     def __init__(self):
         self.db = DatabaseManager()
         self.indicators = [
-            {'id': 11,   'name': 'Selic',          'symbol': 'SELIC', 'category': 'Macro'},
-            {'id': 433,  'name': 'IPCA (Inflação)', 'symbol': 'IPCA',  'category': 'Macro'},
-            {'id': 4389, 'name': 'CDI',             'symbol': 'CDI',   'category': 'Macro'},
+            {'id': 11,    'name': 'Selic',              'symbol': 'SELIC', 'category': 'Macro'},
+            {'id': 432,   'name': 'Selic Meta',         'symbol': 'SELIC_META', 'category': 'Macro'},
+            {'id': 433,   'name': 'IPCA (Inflação)',    'symbol': 'IPCA',  'category': 'Macro'},
+            {'id': 13522, 'name': 'IPCA Acumulado 12m', 'symbol': 'IPCA12M', 'category': 'Macro'}, 
+            {'id': 4389,  'name': 'CDI',                'symbol': 'CDI',   'category': 'Macro'},
         ]
 
     def sync_metadata(self):

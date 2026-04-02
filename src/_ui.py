@@ -1,9 +1,11 @@
-"""
-src/_ui.py — Estilos e helpers compartilhados entre todas as páginas.
-Coloque este arquivo em: seu_projeto/src/_ui.py
-"""
+# src/_ui.py
+# Tudo que é compartilhado entre as páginas fica aqui:
+# paleta de cores, dicionários de lookup, CSS global e helpers de renderização.
 
-# ─── PALETA ────────────────────────────────────────────────────────────────
+# ─── PALETA E LOOKUP DE ATIVOS ─────────────────────────────────────────────
+
+# Cor de fundo do avatar quando não tem logo na CDN (fallback com inicial).
+# Cada setor tem um tom diferente para dar identidade visual nos cards.
 SECTOR_COLORS = {
     'Financeiro': '#1a3a6e',
     'Energia':    '#4a1e0e',
@@ -18,6 +20,7 @@ SECTOR_COLORS = {
     'default':    '#2a2a3a',
 }
 
+# Mapeia símbolo → setor para alimentar SECTOR_COLORS no avatar_html().
 SYMBOL_SECTOR = {
     'ITUB4.SA':'Financeiro','PETR4.SA':'Energia','VALE3.SA':'Mineração',
     'BPAC11.SA':'Financeiro','ABEV3.SA':'Consumo','WEGE3.SA':'Industrial',
@@ -30,6 +33,8 @@ SYMBOL_SECTOR = {
     '^BVSP':'Índice','^GSPC':'Índice','^DJI':'Índice',
 }
 
+# Nome de exibição de cada ativo — usado nos cards, gráficos e selectboxes.
+# Centralizado aqui para não precisar corrigir em múltiplos lugares.
 SYMBOL_LABEL = {
     'ITUB4.SA':'ITUB4','PETR4.SA':'PETR4','VALE3.SA':'VALE3',
     'BPAC11.SA':'BPAC11','ABEV3.SA':'ABEV3','WEGE3.SA':'WEGE3',
@@ -41,21 +46,29 @@ SYMBOL_LABEL = {
     '^BVSP':'IBOV','^GSPC':'S&P500','^DJI':'DOW',
 }
 
-# ─── CSS BASE ──────────────────────────────────────────────────────────────
+# ─── OPÇÕES DE PERÍODO ─────────────────────────────────────────────────────
+
+# Centralizado aqui para que todas as páginas usem os mesmos valores e labels.
+# O valor 2 para "Último dia" existe porque o banco sempre tem D-1;
+# pedir apenas 1 dia volta vazio quando o mercado está fechado.
+PERIOD_OPT = {'Último dia': 2, '7 dias': 7, '30 dias': 30, '90 dias': 90, '1 ano': 365}
+
+# ─── CSS GLOBAL ────────────────────────────────────────────────────────────
+
+# Injetado uma única vez no Home.py via st.markdown(CSS).
+# As páginas filhas herdam automaticamente — não precisam importar.
 CSS = """
 <style>
-/* ── FUNDO ── */
 .main .block-container {
-    background-color: #0e1018 !important;
     padding-top: 2rem;
     max-width: 100%;
 }
 
-/* ── CABEÇALHO DE PÁGINA ── */
-/* ── ESCONDE MENU PRINCIPAL ── */
+/* Esconde os elementos padrão do Streamlit que não quero mostrar */
 #MainMenu { visibility: hidden; }
 footer    { visibility: hidden; }
 
+/* ── Título e subtítulo de cada página ── */
 .pg-title {
     font-size: 30px !important;
     font-weight: 700 !important;
@@ -69,7 +82,7 @@ footer    { visibility: hidden; }
     margin-bottom: 32px !important;
 }
 
-/* ── CABEÇALHO DE SEÇÃO ── */
+/* ── Cabeçalho de seção (título + badge opcional) ── */
 .sec-wrap {
     display: flex;
     align-items: center;
@@ -95,7 +108,7 @@ footer    { visibility: hidden; }
     border-radius: 5px;
 }
 
-/* ── PULSO DO MERCADO ── */
+/* ── Grid de cards do Pulso do Mercado (5 colunas fixas) ── */
 .market-grid {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -128,7 +141,7 @@ footer    { visibility: hidden; }
     font-weight: 400 !important;
 }
 
-/* ── CARDS DE ATIVOS ── */
+/* ── Grid de cards de ativos (auto-fill, mínimo 200px por card) ── */
 .stock-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -156,6 +169,8 @@ footer    { visibility: hidden; }
     color: #454a60 !important;
     margin-top: 2px;
 }
+
+/* ── Mini-stat dentro dos cards (retorno / volatilidade) ── */
 .sstat {
     background: #0f1118;
     border-radius: 6px;
@@ -176,7 +191,7 @@ footer    { visibility: hidden; }
     margin-top: 2px;
 }
 
-/* ── ECONOMIA ── */
+/* ── Cards de economia (SELIC / CDI / IPCA) ── */
 .eco-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -212,17 +227,15 @@ footer    { visibility: hidden; }
 }
 .eco-icon { font-size: 24px; opacity: 0.4; }
 
-/* ── SEMÂNTICA ── */
+/* ── Classes semânticas de alta/queda usadas em change_span() ── */
 .up   { color: #4caf7d !important; font-weight: 600 !important; }
 .down { color: #e05a5a !important; font-weight: 600 !important; }
 
-/* ── DIVISOR ── */
+/* ── Divisor entre seções ── */
 .divider { border: none; border-top: 0.5px solid #191c28; margin: 30px 0; }
 
-/* ── SIDEBAR ── */
-
+/* ── Sidebar ── */
 [data-testid="stSidebar"] {
-    background: #13161f !important;
     border-right: 0.5px solid #1f2333 !important;
 }
 [data-testid="stSidebarNav"] a {
@@ -249,7 +262,7 @@ footer    { visibility: hidden; }
     margin-bottom: 8px !important;
 }
 
-/* ── INPUTS ── */
+/* ── Esconde os labels dos inputs (uso label='_' + label_visibility='collapsed') ── */
 div[data-testid="stMultiSelect"] > label,
 div[data-testid="stSelectbox"]   > label,
 div[data-testid="stTextInput"]   > label,
@@ -263,151 +276,126 @@ div[data-testid="stTextInput"] input {
     font-size: 14px !important;
 }
 
-/* ── EXPANDER — seletores atualizados para Streamlit 1.30+ ── */
+/* ── Expander — seletores válidos a partir do Streamlit 1.30 ── */
 div[data-testid="stExpander"] {
     background: #161922 !important;
     border: 0.5px solid #1f2333 !important;
     border-radius: 10px !important;
     overflow: hidden;
-    margin-bottom: 8px !important;
-}
-div[data-testid="stExpander"] details {
-    background: #161922 !important;
+    margin-bottom: 6px !important;
 }
 div[data-testid="stExpander"] details > summary {
+    padding: 14px 18px !important;
     font-size: 14px !important;
     font-weight: 600 !important;
-    color: #c8d0e8 !important;
-    padding: 14px 18px !important;
+    color: #b0b8d8 !important;
     list-style: none;
     cursor: pointer;
 }
-div[data-testid="stExpander"] details > summary:hover {
-    color: #e8ecf8 !important;
-    background: #1a1d2a !important;
-}
-div[data-testid="stExpander"] details > summary::marker,
 div[data-testid="stExpander"] details > summary::-webkit-details-marker {
     display: none;
 }
-/* Conteúdo interno do expander */
+div[data-testid="stExpander"] details > summary::after {
+    content: '+';
+    float: right;
+    color: #454a60;
+    font-size: 18px;
+    font-weight: 300;
+    line-height: 1;
+}
+div[data-testid="stExpander"] details[open] > summary::after {
+    content: '−';
+}
 div[data-testid="stExpander"] details > div {
     padding: 4px 18px 16px !important;
     border-top: 0.5px solid #1a1d28;
 }
 
+/* ── Rodapé personalizado ── */
+.block-container {
+    padding-bottom: 2rem !important;
+}
+.page-footer {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 0.5px solid #191c28;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+}
+.footer-update {
+    font-size: 11px !important;
+    color: #4caf7d !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.3px;
+}
+.footer-disclaimer {
+    font-size: 11px !important;
+    color: #3a3f55 !important;
+    line-height: 1.6;
+    max-width: 720px;
+}
+.footer-attribution {
+    font-size: 10px !important;
+    color: #2a2f45 !important;
+}
+.footer-attribution a {
+    color: #2a2f45 !important;
+    text-decoration: none !important;
+}
+
 /* ═══════════════════════════════════════════════════════════════
-   ── RESPONSIVIDADE ──────────────────────────────────────────
-   Breakpoints:
-     768px → tablet  (2–3 colunas)
-     480px → celular (1–2 colunas)
+   RESPONSIVIDADE
+   768px → tablet  (2–3 colunas)
+   480px → celular (1–2 colunas)
    ═══════════════════════════════════════════════════════════════ */
 
-/* ── TABLET (≤ 768px) ── */
+/* ── Tablet (≤ 768px) ── */
 @media (max-width: 768px) {
 
-    /* Padding da área principal: reduz laterais em telas menores */
     .main .block-container {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         padding-top: 1.25rem !important;
     }
 
-    /* Título de página levemente menor */
-    .pg-title {
-        font-size: 24px !important;
-    }
-    .pg-subtitle {
-        font-size: 13px !important;
-        margin-bottom: 20px !important;
-    }
+    .pg-title   { font-size: 24px !important; }
+    .pg-subtitle { font-size: 13px !important; margin-bottom: 20px !important; }
 
-    /* Pulso do Mercado: 5 colunas → 3 colunas */
-    .market-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-    }
+    .market-grid { grid-template-columns: repeat(3, 1fr) !important; }
+    .mcard-value { font-size: 18px !important; }
 
-    /* Tamanho do valor no mcard levemente menor */
-    .mcard-value {
-        font-size: 18px !important;
-    }
+    .eco-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .eco-icon { display: none !important; } /* ocupa espaço desnecessário em telas pequenas */
 
-    /* Economia: 3 colunas → 2 colunas */
-    .eco-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
-
-    /* Ícone decorativo some em telas menores (evita layout quebrado) */
-    .eco-icon {
-        display: none !important;
-    }
-
-    /* Cripto (definido inline em 03_Cripto.py, sobrescrito aqui globalmente) */
-    .cripto-grid {
-        grid-template-columns: 1fr !important;
-    }
-
-    /* Seção header: badge some, título fica sozinho */
-    .sec-badge {
-        display: none !important;
-    }
+    .cripto-grid { grid-template-columns: 1fr !important; }
+    .sec-badge   { display: none !important; }
 }
 
-/* ── CELULAR (≤ 480px) ── */
+/* ── Celular (≤ 480px) ── */
 @media (max-width: 480px) {
 
-    /* Padding mínimo nas laterais */
     .main .block-container {
         padding-left: 0.5rem !important;
         padding-right: 0.5rem !important;
     }
 
-    /* Título ainda menor */
-    .pg-title {
-        font-size: 20px !important;
-    }
+    .pg-title    { font-size: 20px !important; }
+    .market-grid { grid-template-columns: repeat(2, 1fr) !important; }
 
-    /* Pulso do Mercado: 3 → 2 colunas */
-    .market-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
+    .mcard       { padding: 14px 12px !important; }
+    .mcard-value { font-size: 16px !important; }
+    .mcard-desc  { display: none !important; } /* descrição some para não poluir o card */
 
-    /* Valor do mcard compacto */
-    .mcard {
-        padding: 14px 12px !important;
-    }
-    .mcard-value {
-        font-size: 16px !important;
-    }
-    .mcard-desc {
-        display: none !important;
-    }
+    .stock-grid  { grid-template-columns: 1fr !important; }
+    .eco-grid    { grid-template-columns: 1fr !important; }
+    .eco-card    { padding: 14px 16px !important; }
+    .eco-value   { font-size: 22px !important; }
 
-    /* Cards de ativos: força 1 coluna em telas muito pequenas */
-    .stock-grid {
-        grid-template-columns: 1fr !important;
-    }
+    .sec-title   { font-size: 13px !important; letter-spacing: 1px; }
 
-    /* Economia: 2 → 1 coluna */
-    .eco-grid {
-        grid-template-columns: 1fr !important;
-    }
-
-    /* Card de economia: padding compacto */
-    .eco-card {
-        padding: 14px 16px !important;
-    }
-    .eco-value {
-        font-size: 22px !important;
-    }
-
-    /* Cabeçalho de seção: letra menor */
-    .sec-title {
-        font-size: 13px !important;
-        letter-spacing: 1px;
-    }
-
-    /* Expander: padding interno compacto */
     div[data-testid="stExpander"] details > summary {
         padding: 12px 14px !important;
         font-size: 13px !important;
@@ -419,8 +407,10 @@ div[data-testid="stExpander"] details > div {
 </style>
 """
 
-# ─── HELPERS ───────────────────────────────────────────────────────────────
+# ─── HELPERS DE RENDERIZAÇÃO ───────────────────────────────────────────────
+
 def _dot(color: str = '#5b8ef0') -> str:
+    """SVG do ponto colorido que aparece antes do título de cada seção."""
     return (
         f'<svg width="8" height="8" viewBox="0 0 8 8" style="flex-shrink:0;">'
         f'<circle cx="4" cy="4" r="3" fill="{color}" opacity=".3"/>'
@@ -428,6 +418,7 @@ def _dot(color: str = '#5b8ef0') -> str:
     )
 
 def sec_header(title: str, badge: str = '', dot_color: str = '#5b8ef0') -> str:
+    """Cabeçalho de seção com ponto colorido e badge opcional à direita."""
     badge_html = f'<div class="sec-badge">{badge}</div>' if badge else ''
     return (
         f'<div class="sec-wrap">'
@@ -435,9 +426,40 @@ def sec_header(title: str, badge: str = '', dot_color: str = '#5b8ef0') -> str:
         f'{badge_html}</div>'
     )
 
-# ─── LOGOS ─────────────────────────────────────────────────────────────────
-TICKER_LOGOS_CDN = "https://cdn.tickerlogos.com"
+def change_span(variation: float, size: int = 12) -> str:
+    """Seta + variação percentual com cor semântica (up/down).
+    Converte ponto para vírgula para seguir o padrão brasileiro."""
+    cls    = 'up'      if variation >= 0 else 'down'
+    arrow  = '&#9650;' if variation >= 0 else '&#9660;'
+    val_br = f"{abs(variation):.2f}".replace(".", ",")
+    return f'<span class="{cls}" style="font-size:{size}px;">{arrow} {val_br}%</span>'
 
+def fmt_price(price: float, symbol: str) -> str:
+    """Formata o preço conforme a moeda/tipo do ativo.
+
+    BRL (.SA ou *BRL* no símbolo): padrão brasileiro — vírgula como decimal,
+        ponto como milhar. O replace encadeado (→ X → , → .) evita colisão
+        entre os dois separadores durante a conversão.
+    ^BVSP: pontos sem casas decimais, milhar com ponto (ex: 134.521).
+    ^GSPC / ^DJI: inteiros com vírgula americana (ex: $5,432).
+    Demais: dólar com duas casas decimais.
+    """
+    if 'BRL' in symbol or symbol.endswith('.SA'):
+        br_format = f"{price:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        return f'R$&nbsp;{br_format}'
+
+    if symbol == '^BVSP':
+        return f"{price:,.0f}".replace(",", ".")
+
+    if symbol in ('^GSPC', '^DJI'):
+        return f"${price:,.0f}"
+
+    return f'$&nbsp;{price:,.2f}'
+
+# ─── LOGOS ─────────────────────────────────────────────────────────────────
+
+# CDN gratuita que serve logos pelo domínio da empresa.
+# Exige atribuição no rodapé — por isso o get_attribution() é obrigatório.
 SYMBOL_DOMAINS = {
     'ITUB4.SA': 'itau.com.br',
     'PETR4.SA': 'petrobras.com.br',
@@ -446,7 +468,7 @@ SYMBOL_DOMAINS = {
     'ABEV3.SA': 'ambev.com.br',
     'WEGE3.SA': 'weg.net',
     'SANB11.SA': 'santander.com.br',
-    #'BBDC4.SA': 'bradesco.com.br',  # 404 na CDN — usa fallback com inicial
+    #'BBDC4.SA': 'bradesco.com.br',  # retorna 404 na CDN — usando fallback com inicial
     'BBAS3.SA': 'bb.com.br',
     'JBSS32.SA': 'jbs.com.br',
     'AAPL':      'apple.com',
@@ -456,7 +478,7 @@ SYMBOL_DOMAINS = {
     'AMZN':      'amazon.com',
     'TSLA':      'tesla.com',
     'META':      'meta.com',
-    #'NU':        'nubank.com',       # 404 na CDN — usa fallback com inicial
+    #'NU':        'nubank.com',       # retorna 404 na CDN — usando fallback com inicial
     'BTC-USD':   'bitcoin.org',
     'ETH-USD':   'ethereum.org',
     '2222.SR':   'aramco.com',
@@ -464,18 +486,14 @@ SYMBOL_DOMAINS = {
 }
 
 def avatar_html(symbol: str, size: int = 36) -> str:
-    """
-    Gera o avatar do ativo com logo da CDN TickerLogos.
+    """Gera o avatar do ativo.
 
-    Duas situações:
-    1. Sem domínio mapeado (ou domínio comentado por 404) →
-       quadrado colorido (cor do setor) com a inicial do ticker.
-    2. Com domínio mapeado →
-       logo da CDN sobre fundo branco.
+    Com domínio mapeado → logo da CDN sobre fundo branco.
+    Sem domínio → quadrado colorido com a inicial do ticker (cor do setor).
 
-    Nota: onerror JavaScript não funciona dentro do st.markdown()
-    do Streamlit (iframe sandboxado). Por isso domínios que retornam
-    404 devem ser comentados em SYMBOL_DOMAINS para usar o fallback.
+    O onerror do JavaScript não funciona dentro do st.markdown() porque o
+    Streamlit roda num iframe sandboxado — não tem como detectar 404 em tempo
+    de execução. Por isso domínios problemáticos ficam comentados aqui.
     """
     domain   = SYMBOL_DOMAINS.get(symbol)
     label    = symbol.replace('.SA', '')
@@ -483,7 +501,6 @@ def avatar_html(symbol: str, size: int = 36) -> str:
     sector   = SYMBOL_SECTOR.get(symbol, 'default')
     bg_color = SECTOR_COLORS.get(sector, SECTOR_COLORS['default'])
 
-    # Sem domínio mapeado: fallback colorido com inicial
     if not domain:
         return (
             f'<div style="width:{size}px; height:{size}px; border-radius:8px; '
@@ -492,7 +509,6 @@ def avatar_html(symbol: str, size: int = 36) -> str:
             f'font-weight:700; color:#c8d0e8;">{initial}</div>'
         )
 
-    # Com domínio: logo da CDN sobre fundo branco
     logo_url = f"https://cdn.tickerlogos.com/{domain}"
     return (
         f'<div style="width:{size}px; height:{size}px; border-radius:8px; '
@@ -504,28 +520,58 @@ def avatar_html(symbol: str, size: int = 36) -> str:
     )
 
 def get_attribution() -> str:
-    """Rodapé com atribuição da fonte dos logos (obrigatório pela CDN)."""
+    """Atribuição obrigatória pelos termos de uso da CDN de logos."""
     return (
-        '<div style="font-size:10px; color:#454a60; text-align:center; margin-top:50px;">'
-        'Logos by <a href="https://www.allinvestview.com/tools/ticker-logos/" '
-        'style="color:#454a60; text-decoration:none;">AllInvestView</a></div>'
+        '<div class="footer-attribution" style="margin-top:0px;">'
+        'Logos by <a href="https://www.allinvestview.com/tools/ticker-logos/">AllInvestView</a>'
+        '</div>'
     )
 
-def change_span(variation: float, size: int = 12) -> str:
-    cls   = 'up'   if variation >= 0 else 'down'
-    arrow = '&#9650;' if variation >= 0 else '&#9660;'
-    return f'<span class="{cls}" style="font-size:{size}px;">{arrow} {abs(variation):.2f}%</span>'
+def page_footer() -> str:
+    """Rodapé padrão — chamado na última linha de cada página."""
+    return f"""
+    <div class="page-footer">
+        <div class="footer-update">
+            🕐 Dados atualizados diariamente após o fechamento dos mercados (D-1)
+        </div>
+        <div class="footer-disclaimer">
+            ⚠️ Os cálculos são automáticos, baseados em dados públicos
+            (Yahoo Finance / Banco Central do Brasil), e não representam análise
+            de valores mobiliários ou recomendação de investimento.
+            Rentabilidade passada não é garantia de retorno futuro.
+        </div>
+        {get_attribution()}
+    </div>
+    """
 
-def fmt_price(price: float, symbol: str) -> str:
-    if 'BRL' in symbol or symbol.endswith('.SA'):
-        return f'R$&nbsp;{price:,.2f}'
-    if symbol in ('^BVSP', '^GSPC', '^DJI'):
-        return f'{price:,.0f}'
-    return f'$&nbsp;{price:,.2f}'
+def render_eco_cards(m: dict) -> str:
+    """Renderiza os cards de SELIC, CDI e IPCA.
+    Reutilizado em Home e Brasil — qualquer mudança de layout vale para os dois."""
+    eco_cards = [
+        {'label': 'SELIC', 'value': f"{m['selic_annual']}%", 'detail': f"Taxa diária: {m['selic_daily']}%",
+         'desc': 'Taxa básica de juros (Meta)', 'icon': '&#127970;'},
+        {'label': 'CDI',   'value': f"{m['cdi_annual']}%",   'detail': '100% do CDI',
+         'desc': 'Referência para Renda Fixa',  'icon': '&#128200;'},
+        {'label': 'IPCA',  'value': f"{m['ipca_12m']}%",     'detail': f"Mensal: {m['ipca_monthly']}%",
+         'desc': 'Inflação oficial (12 meses)', 'icon': '&#129534;'},
+    ]
+    eco = ''
+    for c in eco_cards:
+        eco += (
+            f'<div class="eco-card"><div>'
+            f'<div class="eco-label">{c["label"]}</div>'
+            f'<div class="eco-value" style="font-size:28px !important;">{c["value"]} '
+            f'<span style="font-size:13px;color:#4a6080;font-weight:500;">a.a.</span></div>'
+            f'<div style="font-size:11px;color:#5b7fa6;margin:4px 0 6px;font-weight:500;">{c["detail"]}</div>'
+            f'<div class="eco-desc">{c["desc"]}</div>'
+            f'</div><div class="eco-icon">{c["icon"]}</div></div>'
+        )
+    return f'<div class="eco-grid">{eco}</div>'
 
 # ─── PLOTLY ────────────────────────────────────────────────────────────────
 
-# Passar em TODOS os st.plotly_chart() — remove toolbar e zoom por scroll
+# Desabilito a toolbar do Plotly — no contexto de dashboard financeiro ela só
+# atrapalha; o usuário não precisa exportar PNG nem fazer zoom livre.
 PLOTLY_CONFIG = {
     'displayModeBar': False,
     'scrollZoom': False,
@@ -534,7 +580,8 @@ PLOTLY_CONFIG = {
 }
 
 def plotly_layout(fig, margin=(0, 0, 10, 0)):
-    """Tema dark transparente padronizado para todos os gráficos."""
+    """Aplica o tema dark transparente padrão em qualquer figura Plotly.
+    fixedrange=True nos eixos impede zoom acidental no mobile."""
     fig.update_layout(
         margin=dict(l=margin[0], r=margin[1], t=margin[2], b=margin[3]),
         paper_bgcolor='rgba(0,0,0,0)',

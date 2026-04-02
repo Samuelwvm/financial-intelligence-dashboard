@@ -1,17 +1,17 @@
+# views /04_Cripto.py
+# Página de criptomoedas — cards de Bitcoin e Ethereum, gráfico comparativo e preços históricos lado a lado.
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from pathlib import Path
 import sys
 
-root = Path(__file__).parent.parent
-sys.path.append(str(root))
+#root = Path(__file__).parent.parent.parent
+#sys.path.append(str(root))
 
 from src.database.queries import get_latest, get_ohlc_stats, get_history
-from src._ui import CSS, sec_header, change_span, plotly_layout, PLOTLY_CONFIG
-
-st.set_page_config(page_title="Cripto · Radar Financeiro", layout="wide")
-st.markdown(CSS, unsafe_allow_html=True)
+from src._ui import sec_header, change_span, plotly_layout, PLOTLY_CONFIG, page_footer
 
 st.markdown("""
 <style>
@@ -51,7 +51,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-period_opt = {'Hoje': 2, '7 dias': 7, '30 dias': 30, '90 dias': 90, '1 ano': 365}
+period_opt = {'Último dia': 2, '7 dias': 7, '30 dias': 30, '90 dias': 90, '1 ano': 365}
 period_lbl = st.radio('_', list(period_opt.keys()), horizontal=True,
                       label_visibility='collapsed', index=1)
 days = period_opt[period_lbl]
@@ -173,3 +173,5 @@ for col, sym, name, color, fill in [
             )
             st.plotly_chart(plotly_layout(fig, margin=(0, 0, 0, 0)),
                             use_container_width=True, config=PLOTLY_CONFIG)
+
+st.markdown(page_footer(), unsafe_allow_html=True)

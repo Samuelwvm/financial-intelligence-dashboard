@@ -1,27 +1,22 @@
+# views/02_Brasil.py
+# Página do mercado brasileiro — cards de ações B3, análise individual,
+# Ibovespa e indicadores macroeconômicos.
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from pathlib import Path
-import sys
-
-root = Path(__file__).parent.parent
-sys.path.append(str(root))
 
 from src.database.queries import (
     get_br_stocks, get_latest, get_stats, get_history, get_macro_detail,
 )
 from src._ui import (
-    CSS, sec_header, avatar_html, change_span,
-    fmt_price, plotly_layout, PLOTLY_CONFIG, SYMBOL_LABEL,
+    sec_header, avatar_html, change_span,
+    fmt_price, plotly_layout, PLOTLY_CONFIG, SYMBOL_LABEL, page_footer,
+    PERIOD_OPT, render_eco_cards,
 )
 
-st.set_page_config(page_title="Brasil · Radar Financeiro", layout="wide")
-st.markdown(CSS, unsafe_allow_html=True)
 
-
-# ─── INTERFACE ─────────────────────────────────────────────────────────────
-
-PERIOD_OPT = {'Hoje': 2, '7 dias': 7, '30 dias': 30, '90 dias': 90, '1 ano': 365}
+# ─── CABEÇALHO ─────────────────────────────────────────────────────────────
 
 st.markdown(
     '<div class="pg-title">Mercado Brasileiro</div>'
@@ -29,15 +24,15 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── 1. Cards de ações ────────────────────────────────────────────────────
-# O período é definido no seletor da Análise Individual (abaixo) e lido
-# aqui via session_state. O Streamlit re-executa o script inteiro a cada
-# interação, então o valor já está atualizado quando chega nesta linha.
+# ── 1. CARDS DE AÇÕES ────────────────────────────────────────────────────
 st.markdown(sec_header('Ações B3', 'Lista de elite', '#4caf7d'), unsafe_allow_html=True)
 
+# O período dos cards vem do session_state porque o selectbox da seção 2
+# usa key='global_period' — assim os cards já refletem o período escolhido
+# mesmo antes do usuário rolar a página.
 period_lbl = st.session_state.get('global_period', '30 dias')
-days       = PERIOD_OPT[period_lbl]
-short_lbl  = period_lbl.lower().replace(' dias', 'd').replace(' ano', 'a')
+days       = PERIOD_OPT.get(period_lbl, 30)
+short_lbl  = period_lbl.lower().replace(' dias', 'd').replace(' ano', 'a').replace('último dia', '1d')
 
 stocks_df = get_br_stocks()
 cards = ''
@@ -54,7 +49,7 @@ for _, row in stocks_df.iterrows():
         f'<div><div class="scard-name">{label}</div>'
         f'<div class="scard-sub">{row["name"]}</div></div></div>'
         f'<div style="margin-bottom:8px;">'
-        f'<span style="font-size:16px;font-weight:700;color:#d0d8f0;">R$&nbsp;{price:,.2f}</span>'
+        f'<span style="font-size:16px;font-weight:700;color:#d0d8f0;">{fmt_price(price, sym)}</span>'
         f'&nbsp;&nbsp;{change_span(var)}</div>'
         f'<div style="display:flex;gap:6px;">'
         f'<div class="sstat"><div class="sstat-label">retorno {short_lbl}</div>'
@@ -66,7 +61,7 @@ for _, row in stocks_df.iterrows():
 st.markdown(f'<div class="stock-grid">{cards}</div>', unsafe_allow_html=True)
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
-# ── 2. Análise Individual ────────────────────────────────────────────────
+# ── 2. ANÁLISE INDIVIDUAL ────────────────────────────────────────────────
 st.markdown(sec_header('Análise Individual'), unsafe_allow_html=True)
 
 name_map = dict(zip(stocks_df['symbol'], stocks_df['name']))
@@ -79,13 +74,14 @@ with col_sel:
         label_visibility='collapsed',
     )
 with col_period:
+    # key='global_period' faz o selectbox sincronizar com os cards do topo via session_state
     period_lbl = st.selectbox(
         '_', list(PERIOD_OPT.keys()), index=2,
         key='global_period',
         label_visibility='collapsed',
     )
     days      = PERIOD_OPT[period_lbl]
-    short_lbl = period_lbl.lower().replace(' dias', 'd').replace(' ano', 'a')
+    short_lbl = period_lbl.lower().replace(' dias', 'd').replace(' ano', 'a').replace('último dia', '1d')
 
 hist = get_history(sel_symbol, days)
 if not hist.empty:
@@ -110,7 +106,7 @@ if not hist.empty:
         st.markdown(f"""
         <div style="background:#161922;border:0.5px solid #1f2333;border-radius:10px;padding:20px;">
             <div style="font-size:10px;color:#454a60;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">{label}</div>
-            <div style="font-size:26px;font-weight:700;color:#d0d8f0;margin-bottom:5px;">R$&nbsp;{price:,.2f}</div>
+            <div style="font-size:26px;font-weight:700;color:#d0d8f0;margin-bottom:5px;">{fmt_price(price, sel_symbol)}</div>
             {change_span(var, size=13)}
             <hr style="border:none;border-top:0.5px solid #1f2333;margin:14px 0;">
             <div style="display:flex;gap:8px;">
@@ -126,7 +122,8 @@ else:
 
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
-# ── 3. Ibovespa ──────────────────────────────────────────────────────────
+# ── 3. IBOVESPA ──────────────────────────────────────────────────────────
+# Usa o mesmo período selecionado na análise individual
 st.markdown(sec_header('Ibovespa', period_lbl, '#7eb8f7'), unsafe_allow_html=True)
 
 ibov = get_history('^BVSP', days=days)
@@ -141,28 +138,10 @@ if not ibov.empty:
 
 st.markdown('<hr class="divider"/>', unsafe_allow_html=True)
 
-# ── 4. Economia Brasil ───────────────────────────────────────────────────
+# ── 4. ECONOMIA BRASIL ───────────────────────────────────────────────────
 st.markdown(sec_header('Economia Brasil', 'Dados oficiais BCB', '#7eb8f7'), unsafe_allow_html=True)
 
 m = get_macro_detail()
-eco_cards = [
-    {'label': 'SELIC', 'value': f"{m['selic_annual']}%", 'detail': f"Taxa diária: {m['selic_daily']}%",
-     'desc': 'Taxa básica de juros (Meta)', 'icon': '&#127970;'},
-    {'label': 'CDI',   'value': f"{m['cdi_annual']}%",   'detail': '100% do CDI',
-     'desc': 'Referência para Renda Fixa',  'icon': '&#128200;'},
-    {'label': 'IPCA',  'value': f"{m['ipca_12m']}%",     'detail': f"Mensal: {m['ipca_monthly']}%",
-     'desc': 'Inflação oficial (12 meses)', 'icon': '&#129534;'},
-]
+st.markdown(render_eco_cards(m), unsafe_allow_html=True)
 
-eco = ''
-for c in eco_cards:
-    eco += (
-        f'<div class="eco-card"><div>'
-        f'<div class="eco-label">{c["label"]}</div>'
-        f'<div class="eco-value" style="font-size:28px !important;">{c["value"]} '
-        f'<span style="font-size:13px;color:#4a6080;font-weight:500;">a.a.</span></div>'
-        f'<div style="font-size:11px;color:#5b7fa6;margin:4px 0 6px;font-weight:500;">{c["detail"]}</div>'
-        f'<div class="eco-desc">{c["desc"]}</div>'
-        f'</div><div class="eco-icon">{c["icon"]}</div></div>'
-    )
-st.markdown(f'<div class="eco-grid">{eco}</div>', unsafe_allow_html=True)
+st.markdown(page_footer(), unsafe_allow_html=True)

@@ -51,6 +51,24 @@ jobs:
         if: steps.check_data.outputs.count != '0'
         run: python run_all.py
 
+      - name: Verificar resultado no banco
+        run: |
+          python -c "
+          import sqlite3, sys
+          conn = sqlite3.connect('data/finance.db')
+          row = conn.execute(
+              \"SELECT status, details FROM update_logs ORDER BY id DESC LIMIT 1\"
+          ).fetchone()
+          conn.close()
+          if row:
+              print(f'Último log: {row[0]} — {row[1]}')
+              if row[0] == 'Erro':
+                  print('❌ Pipeline reportou erro. Verifique os logs acima.')
+                  sys.exit(1)
+          else:
+              print('⚠️ Nenhum log encontrado (pode ser primeira execução via setup_historico).')
+          "
+
       - name: Publicar branch deploy
         run: |
           git config user.name "github-actions[bot]"
