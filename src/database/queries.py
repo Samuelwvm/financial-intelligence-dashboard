@@ -38,7 +38,12 @@ def get_latest(symbol: str) -> tuple[float, float]:
 def get_stats(symbol: str, days: int = 30) -> tuple[float, float]:
     """
     Retorna (retorno_percentual, volatilidade_anualizada) para o período.
-    days=2 é usado como proxy para 'hoje' (busca os 2 últimos registros).
+    
+    Quando days=2, busca os 2 últimos registros disponíveis no banco,
+    funcionando como proxy de variação diária. Essa abordagem é intencional
+    
+    — garante que o cálculo funcione mesmo em feriados e fins de semana,
+    onde o dia atual pode não ter dado disponível ainda.
     """
     db = DatabaseManager()
     query_days = 2 if days <= 2 else days
@@ -176,35 +181,47 @@ def get_commodities_indices() -> pd.DataFrame:
 def get_macro_detail() -> dict:
     """
     Retorna SELIC, CDI e IPCA formatados para os cards de Economia Brasil.
-
     Notas de cálculo:
     - SELIC (série BCB 11): retorna taxa diária efetiva → anualizada por juros compostos (base 252)
+    - SELIC Meta (série BCB 432): já retorna taxa anual → usado direto
     - CDI  (série BCB 4389): já retorna taxa anual → usado direto
-    - IPCA (série BCB 433): retorna variação mensal → acumulado 12m por composição
+    - IPCA Mensal (série BCB 433): retorna variação mensal
+    - IPCA 12M (série BCB 13522): retorna acumulado oficial 12 meses direto da fonte
     """
     db = DatabaseManager()
     with db.get_connection() as conn:
+        #Busca a Selic Meta oficial
+        df_meta = pd.read_sql(
+            "SELECT price FROM assets_history WHERE symbol = 'SELIC_META' "
+            "ORDER BY date DESC LIMIT 1", conn)
+        
+        # Mantém a query da SELIC (Over) para o cálculo da taxa diária.
         df_selic = pd.read_sql(
             "SELECT price FROM assets_history WHERE symbol = 'SELIC' "
             "ORDER BY date DESC LIMIT 1", conn)
+            
         df_cdi = pd.read_sql(
             "SELECT price FROM assets_history WHERE symbol = 'CDI' "
             "ORDER BY date DESC LIMIT 1", conn)
+            
         df_ipca = pd.read_sql(
             "SELECT price FROM assets_history WHERE symbol = 'IPCA' "
-            "ORDER BY date DESC LIMIT 12", conn)
+            "ORDER BY date DESC LIMIT 1", conn)
+            
+        df_ipca_12m = pd.read_sql(
+            "SELECT price FROM assets_history WHERE symbol = 'IPCA12M' "
+            "ORDER BY date DESC LIMIT 1", conn)
 
-    selic_daily  = float(df_selic['price'].iloc[0]) if not df_selic.empty else 0.0
-    selic_annual = round(((1 + selic_daily / 100) ** 252 - 1) * 100, 2)
+    # Lógica da selic_annual:
+    # Em vez de calcular, usamos o valor direto da selic Meta
+    selic_annual = float(df_meta['price'].iloc[0]) if not df_meta.empty else 0.0
+    
+    # Mantemos o cálculo da taxa diária usando a SELIC Over (série 11)
+    selic_daily = float(df_selic['price'].iloc[0]) if not df_selic.empty else 0.0
 
     cdi_annual = round(float(df_cdi['price'].iloc[0]), 2) if not df_cdi.empty else 0.0
-
     ipca_monthly = round(float(df_ipca['price'].iloc[0]), 2) if not df_ipca.empty else 0.0
-    ipca_12m = (
-        round((df_ipca['price'].apply(lambda x: 1 + x / 100).prod() - 1) * 100, 2)
-        if len(df_ipca) >= 2
-        else ipca_monthly
-    )
+    ipca_12m = round(float(df_ipca_12m['price'].iloc[0]), 2) if not df_ipca_12m.empty else 0.0
 
     return {
         'selic_annual': selic_annual,

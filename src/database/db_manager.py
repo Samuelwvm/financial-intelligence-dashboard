@@ -1,5 +1,8 @@
+# db_manager.py — Gerenciamento do banco de dados SQLite.
+
 import sqlite3
 from contextlib import contextmanager
+from datetime import datetime
 from pathlib import Path
 
 
@@ -15,11 +18,6 @@ class DatabaseManager:
         """
         Context manager que garante commit em caso de sucesso
         e rollback + fechamento em qualquer situação.
-
-        Uso:
-            with db.get_connection() as conn:
-                pd.read_sql(..., conn)
-                conn.execute(...)
         """
         conn = sqlite3.connect(self.db_path)
         try:
@@ -40,6 +38,19 @@ class DatabaseManager:
             conn.executescript(schema_sql)
 
         print(f"✅ Banco de dados inicializado em: {self.db_path}")
+
+    def log_update(self, status: str, details: str = ""):
+        """
+        Registra o resultado de uma execução do pipeline na tabela update_logs.
+        status: 'Sucesso' ou 'Erro'
+        details: mensagem descritiva (tempo de execução, erro, etc.)
+        """
+        today = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        with self.get_connection() as conn:
+            conn.execute(
+                "INSERT INTO update_logs (date, status, details) VALUES (?, ?, ?)",
+                (today, status, details)
+            )
 
 
 if __name__ == "__main__":

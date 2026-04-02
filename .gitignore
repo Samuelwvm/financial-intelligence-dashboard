@@ -8,7 +8,7 @@ venv/
 
 # Banco de Dados e Logs (Dados locais)
 data/*.db
-!data/finance.db
+#!data/finance.db
 logs/*.log
 
 # IDEs (VS Code / PyCharm)

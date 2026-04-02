@@ -11,7 +11,7 @@
 
 ## Sobre o projeto
 
-O Radar Financeiro nasceu de uma necessidade real: entender o mercado financeiro sem precisar ser especialista. O projeto consolida dados de bolsas, moedas, criptoativos e indicadores macroeconômicos brasileiros em um único painel visual, atualizado automaticamente todo dia útil.
+O Easy Finance nasceu de uma necessidade real: entender o mercado financeiro sem precisar ser especialista. O projeto consolida dados de bolsas, moedas, criptoativos e indicadores macroeconômicos brasileiros em um único painel visual, atualizado automaticamente todo dia útil.
 
 A premissa central é que **dados financeiros não precisam ser intimidadores**. Cada número tem contexto, cada variação tem explicação — e o dashboard foi construído com isso em mente.
 
@@ -20,28 +20,30 @@ A premissa central é que **dados financeiros não precisam ser intimidadores**.
 ## Funcionalidades
 
 **Painel principal**
-- Pulso do Mercado com Ibovespa, S&P 500, Dow Jones, Dólar e Euro em tempo real
-- Carteira personalizável com seleção de ativos e análise de desempenho relativo (base 100)
-- Gráfico de Risco vs Retorno para comparar ativos da carteira
-- Indicadores macroeconômicos: SELIC, CDI e IPCA com dados oficiais do Banco Central
+- Pulso do Mercado com Ibovespa, S&P 500, Dow Jones, Dólar e Euro em tempo real.
+- Carteira personalizável com seleção de ativos.
+- Análise de desempenho relativo (base 100).
+- Gráfico de Risco vs Retorno para comparar ativos da carteira.
+- Indicadores macroeconômicos: SELIC, CDI e IPCA com dados oficiais do Banco Central.
 
 **Brasil**
-- 10 ações da B3: Itaú, Petrobras, Vale, BTG, Ambev, WEG, Bradesco, Banco do Brasil, Santander, JBS
-- Análise individual com gráfico histórico por período (hoje, 7d, 30d, 90d, 1 ano)
-- Evolução do Ibovespa no período selecionado
+- 10 ações da B3: Itaú, Petrobras, Vale, BTG, Ambev, WEG, Bradesco, Banco do Brasil, Santander, JBS.
+- Análise individual com gráfico histórico por período (hoje, 7d, 30d, 90d, 1 ano).
+- Evolução do Ibovespa no período selecionado.
 
 **Mundo**
-- 10 ações americanas e globais: Apple, Google, Microsoft, Amazon, NVIDIA, Tesla, Meta, Nubank, AMD, Saudi Aramco
-- Câmbio USD/BRL e EUR/BRL com histórico
-- Commodities e índices: Ouro, Petróleo, S&P 500, Dow Jones
+- 10 ações americanas e globais: Apple, Google, Microsoft, Amazon, NVIDIA, Tesla, Meta, Nubank, AMD, Saudi Aramco.
+- Câmbio USD/BRL e EUR/BRL com histórico.
+- Commodities e índices: Ouro, Petróleo, S&P 500, Dow Jones.
+- Análise individual dos ativos, indices, e commodities.
 
 **Cripto**
-- Bitcoin e Ethereum com preço, variação, máxima, mínima e volatilidade do período
-- Gráfico comparativo de desempenho (base 100)
+- Bitcoin e Ethereum com preço, variação, máxima, mínima e volatilidade do período.
+- Gráfico comparativo de desempenho (base 100).
 
 **Entenda o Mercado**
-- Glossário interativo com 20+ termos financeiros explicados em linguagem acessível
-- Filtro por categoria: Mercado, Risco, Renda Fixa, Câmbio, Cripto, Indicadores
+- Glossário interativo com 20+ termos financeiros explicados em linguagem acessível.
+- Filtro por categoria: Mercado, Risco, Renda Fixa, Câmbio, Cripto, Indicadores.
 
 ---
 
@@ -57,12 +59,14 @@ financial-intelligence-dashboard/
 │       └── daily_update.yml      # Automação diária via GitHub Actions
 │
 ├── app/                          # Frontend (Streamlit)
-│   ├── Home.py                   # Painel principal
-│   └── pages/
-│       ├── 01_Brasil.py
-│       ├── 02_Mundo.py
-│       ├── 03_Cripto.py
-│       └── 04_Entenda.py
+│   ├── Home.py                   # Painel principal, utilizado para navegação
+│   └── views/
+│       ├── 01_Home.py
+│       ├── 02_Brasil.py
+│       ├── 03_Mundo.py
+│       ├── 04_Cripto.py
+│       └── 05_Entenda.py
+├── assets/                       # Contém a logo do projeto.
 │
 ├── src/                          # Backend
 │   ├── collectors/
@@ -83,7 +87,7 @@ financial-intelligence-dashboard/
 │   ├── check_db.py               # Diagnóstico do banco
 │   └── clean_assets.py           # Reset completo para nova carga
 │
-└── requirements.txt
+└── requirements.txt              # Bibliotecas necessárias
 ```
 
 ---
@@ -108,6 +112,7 @@ financial-intelligence-dashboard/
 |---|---|---|
 | [Yahoo Finance](https://finance.yahoo.com) | Ações, moedas, índices, cripto, commodities | Diária |
 | [Banco Central do Brasil](https://www.bcb.gov.br) | SELIC (série 11), IPCA (série 433), CDI (série 4389) | Diária / Mensal |
+| [All Invest View](https://www.allinvestview.com) | Logos dos ativos e criptos| Diária |
 
 ---
 
@@ -146,6 +151,6 @@ streamlit run app/Home.py
 - **Frontend:** Streamlit, Plotly
 - **Backend:** Python, Pandas, NumPy
 - **Banco de dados:** SQLite
-- **Coleta de dados:** yfinance, requests
+- **Coleta de dados:** yfinance, bcb, requests, allinvest
 - **Automação:** GitHub Actions
 - **Deploy:** Streamlit Cloud

@@ -1,3 +1,5 @@
+#Script para verificar a saúde do banco de dados
+
 import sqlite3
 from pathlib import Path
 import sys
@@ -24,7 +26,7 @@ def check_health():
 
     # 2. Verificar Ativos Novos
     print("\n✅ Verificando novos ativos:")
-    novos = ('ITUB4.SA', 'PETR4.SA', 'VALE3.SA', 'BPAC11.SA', 'ABEV3.SA', 'WEGE3.SA', 'BBDC4.SA',  'BBAS3.SA',  'SANB11.SA', 'JBSS32.SA', 'AAPL', 'GOOGL', 'MSFT', 'AMZN', 'NVDA', 'TSLA', 'META', 'NU', 'AMD', '2222.SR', 'CL=F', 'GC=F', '^BVSP', '^GSPC', '^DJI', 'USDBRL=X', 'EURBRL=X', 'BTC-USD', 'ETH-USD')
+    novos = ('ITUB4.SA', 'PETR4.SA', 'VALE3.SA', 'BPAC11.SA', 'ABEV3.SA', 'WEGE3.SA', 'BBDC4.SA',  'BBAS3.SA',  'SANB11.SA', 'JBSS32.SA', 'AAPL', 'GOOGL', 'MSFT', 'AMZN', 'NVDA', 'TSLA', 'META', 'NU', 'AMD', '2222.SR', 'CL=F', 'GC=F', '^BVSP', '^GSPC', '^DJI', 'USDBRL=X', 'EURBRL=X', 'BTC-USD', 'ETH-USD', 'SELIC', 'IPCA', 'CDI')
     for sym in novos:
         cursor.execute("SELECT symbol, name FROM assets_metadata WHERE symbol = ?", (sym,))
         row = cursor.fetchone()

@@ -23,11 +23,11 @@ class YFCollector:
 
         print(f"✅ Metadados sincronizados ({len(asset_list)} ativos verificados).")
 
-    def fetch_and_save(self, symbol: str, period: str = "1d"):
+    def fetch_and_save(self, symbol: str, period: str = "5d"):
         """
         Busca dados no Yahoo Finance e salva na tabela de histórico.
         period='1y' para carga histórica.
-        period='1d' para atualização diária rápida.
+        period='5d' para atualização diária rápida.
         """
         try:
             ticker = yf.Ticker(symbol)
@@ -76,7 +76,7 @@ if __name__ == "__main__":
         {'symbol': 'TSLA',      'name': 'Tesla',                 'category': 'Ação EUA',   'sector': 'Automotivo'},
         {'symbol': 'META',      'name': 'Meta',                  'category': 'Ação EUA',   'sector': 'Tecnologia'},
         {'symbol': 'NU',        'name': 'Nubank',                'category': 'Ação EUA',   'sector': 'Financeiro'},
-        {'symbol': 'AMD',       'name': 'Advanced Micro Devices','category': 'Ação EUA',   'sector': 'Tecnologia'},
+        {'symbol': 'AMD',       'name': 'Advanced Micro Dev.','category': 'Ação EUA',   'sector': 'Tecnologia'},
         {'symbol': '2222.SR',   'name': 'Saudi Aramco',          'category': 'Ação Mundo', 'sector': 'Energia'},
         {'symbol': 'CL=F',      'name': 'Petróleo Brent',        'category': 'Commodity',  'sector': 'Energia'},
         {'symbol': 'GC=F',      'name': 'Ouro',                  'category': 'Commodity',  'sector': 'Segurança'},

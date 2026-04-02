@@ -1,3 +1,5 @@
+# Script para limpar completamente os dados do banco de dados, preparando para uma nova carga
+
 import sqlite3
 from pathlib import Path
 
