@@ -1,0 +1,20 @@
+# Ambiente Virtual
+venv/
+.env
+
+# Python (Arquivos temporários de compilação)
+**/__pycache__/
+*.py[cod]
+
+# Banco de Dados e Logs (Dados locais)
+data/*.db
+#!data/finance.db
+logs/*.log
+
+# IDEs (VS Code / PyCharm)
+.vscode/
+.idea/
+
+# Sistema Operacional
+.DS_Store
+thumbs.db
