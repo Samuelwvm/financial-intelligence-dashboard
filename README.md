@@ -154,3 +154,6 @@ streamlit run app/Home.py
 - **Coleta de dados:** yfinance, bcb, requests, allinvest
 - **Automação:** GitHub Actions
 - **Deploy:** Streamlit Cloud
+
+## 🔗 Acesse o app
+[Easy Finances — Streamlit Cloud](https://easy-finances.streamlit.app/)
