@@ -1,0 +1,79 @@
+name: Daily Market Update
+
+on:
+  schedule:
+    - cron: '0 1 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Restaurar banco do branch deploy
+        run: |
+          git fetch origin deploy 2>/dev/null && \
+          git checkout origin/deploy -- data/finance.db && \
+          echo "✅ Banco restaurado do branch deploy" || \
+          echo "⚠️ Banco não encontrado, será criado do zero"
+
+      - name: Inicializar schema se necessário
+        run: python -c "from src.database.db_manager import DatabaseManager; DatabaseManager().initialize_db()"
+
+      - name: Verificar se banco tem dados
+        id: check_data
+        run: |
+          COUNT=$(python -c "
+          import sqlite3
+          conn = sqlite3.connect('data/finance.db')
+          count = conn.execute('SELECT COUNT(*) FROM assets_history').fetchone()[0]
+          conn.close()
+          print(count)
+          ")
+          echo "count=$COUNT" >> $GITHUB_OUTPUT
+
+      - name: Carga histórica (primeira execução)
+        if: steps.check_data.outputs.count == '0'
+        run: python setup_historico.py
+
+      - name: Atualização diária
+        if: steps.check_data.outputs.count != '0'
+        run: python run_all.py
+
+      - name: Verificar resultado no banco
+        run: |
+          python -c "
+          import sqlite3, sys
+          conn = sqlite3.connect('data/finance.db')
+          row = conn.execute(
+              \"SELECT status, details FROM update_logs ORDER BY id DESC LIMIT 1\"
+          ).fetchone()
+          conn.close()
+          if row:
+              print(f'Último log: {row[0]} — {row[1]}')
+              if row[0] == 'Erro':
+                  print('❌ Pipeline reportou erro. Verifique os logs acima.')
+                  sys.exit(1)
+          else:
+              print('⚠️ Nenhum log encontrado (pode ser primeira execução via setup_historico).')
+          "
+
+      - name: Publicar branch deploy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout --orphan deploy-temp
+          git add -A
+          git commit -m "deploy: $(date +'%Y-%m-%d')"
+          git push --force origin deploy-temp:deploy
