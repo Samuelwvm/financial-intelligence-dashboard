@@ -1,0 +1,185 @@
+@import "tailwindcss";
+
+/* Tokens do mockup (design/mockup/source/*.dc.html). O mockup é a fonte da verdade. */
+:root {
+  color-scheme: light;
+  --bg: #f6f7f4;
+  --card: #ffffff;
+  --line: #e3e7e2;
+  --fg: #14201b;
+  --muted: #566059;
+  --pos: #0b6e55;
+  --neg: #b3382a;
+  --pos-soft: #e4f3ee;
+  --neg-soft: #fbe9e6;
+  --soft: #f6f7f4;
+  --hl: #0e2a22;
+  --hl-fg: #ffffff;
+  --hl-muted: #a9d8c8;
+  --hl-accent: #7fe0bf;
+  --hl-line: #4c7a6b;
+  --primary: #0b6e55;
+  --primary-fg: #ffffff;
+  --inverse-fg: #ffffff; /* texto sobre o chip ativo (fundo = --fg) */
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0b1210;
+  --card: #131c18;
+  --line: #25332d;
+  --fg: #e8f0ec;
+  --muted: #9aa8a1;
+  --pos: #4fd1a5;
+  --neg: #ff8a78;
+  --pos-soft: #123d31;
+  --neg-soft: #4a1f19;
+  --soft: #1b2722;
+  --hl: #12382d;
+  --inverse-fg: #0b1210;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* Sem JavaScript: segue o sistema. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: #0b1210;
+    --card: #131c18;
+    --line: #25332d;
+    --fg: #e8f0ec;
+    --muted: #9aa8a1;
+    --pos: #4fd1a5;
+    --neg: #ff8a78;
+    --pos-soft: #123d31;
+    --neg-soft: #4a1f19;
+    --soft: #1b2722;
+    --hl: #12382d;
+    --inverse-fg: #0b1210;
+    --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-pos: var(--pos);
+  --color-neg: var(--neg);
+  --color-pos-soft: var(--pos-soft);
+  --color-neg-soft: var(--neg-soft);
+  --color-soft: var(--soft);
+  --color-hl: var(--hl);
+  --color-hl-fg: var(--hl-fg);
+  --color-hl-muted: var(--hl-muted);
+  --color-hl-accent: var(--hl-accent);
+  --color-hl-line: var(--hl-line);
+  --color-primary: var(--primary);
+  --color-primary-fg: var(--primary-fg);
+  --color-inverse-fg: var(--inverse-fg);
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), var(--font-inter), sans-serif;
+  --breakpoint-lg: 64rem; /* 1024px: sidebar */
+}
+
+html {
+  line-height: normal;
+  background: var(--bg);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Foco visível em tudo que é interativo. */
+:focus-visible {
+  outline: 2px solid var(--pos);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Entrada dos cards (mesma animação do mockup web: .lift / @keyframes rise).
+   Em CSS para rodar antes da hidratação e não atrasar o LCP; o atraso em
+   cascata vem da variável --i definida em cada card. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: calc(var(--i, 0) * 50ms);
+}
+
+@media (min-width: 64rem) {
+  .lift {
+    transition:
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+  }
+}
+
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--soft) 25%, var(--line) 50%, var(--soft) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s linear infinite;
+  border-radius: 10px;
+}
+@keyframes shimmer {
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .skeleton {
+    animation: none;
+  }
+  .lift,
+  .lift:hover {
+    transition: none;
+    transform: none;
+  }
+}

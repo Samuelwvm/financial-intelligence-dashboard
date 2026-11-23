@@ -1,0 +1,5 @@
+# Pipeline da V2 (sem Streamlit). Versões fixas: o Dependabot propõe atualizações.
+pandas==3.1.1
+numpy==2.5.5
+requests==2.34.2
+yfinance==1.8.0

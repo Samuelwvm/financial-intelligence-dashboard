@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "radar-static",
+      "runtimeExecutable": "C:\Users\SAMUEL\Documents\financial-intelligence-dashboard\.venv\Scripts\python.exe",
+      "runtimeArgs": ["-m", "http.server", "4173", "--directory", "web/out"],
+      "port": 4173
+    }
+  ]
+}

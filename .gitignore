@@ -17,4 +17,15 @@ logs/*.log
 
 # Sistema Operacional
 .DS_Store
-thumbs.db
+thumbs.db.venv/
+
+# V2
+web/public/data/
+web/public/data.tmp/
+web/node_modules/
+web/out/
+web/.next/
+web/test-results/
+web/playwright-report/
+.pytest_cache/
+.ruff_cache/
