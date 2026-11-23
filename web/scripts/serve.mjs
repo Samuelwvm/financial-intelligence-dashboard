@@ -20,10 +20,12 @@ createServer(async (req, res) => {
     file = path.join(root, "404.html");
     status = 404;
   }
+  let body;
   try {
-    res.writeHead(status, { "content-type": TYPES[path.extname(file)] ?? "application/octet-stream" });
-    res.end(await readFile(file));
+    body = await readFile(file);
   } catch {
-    res.writeHead(404).end();
+    return res.writeHead(404).end();
   }
+  res.writeHead(status, { "content-type": TYPES[path.extname(file)] ?? "application/octet-stream" });
+  res.end(body);
 }).listen(port, () => console.log(`servindo ${root} em http://localhost:${port}`));

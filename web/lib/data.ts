@@ -35,10 +35,11 @@ function load<T extends z.ZodTypeAny>(rel: string, schema: T): z.infer<T> {
 
 export const getSummary = cache(() => {
   const s = load("summary.json", summarySchema);
-  const ageDays = (Date.now() - Date.parse(s.generatedAt)) / 86_400_000;
+  // Idade do dado mais recente (asOf), não do arquivo: um export novo de um banco parado também falha.
+  const ageDays = (Date.now() - Date.parse(`${s.asOf}T00:00:00Z`)) / 86_400_000;
   if (ageDays > MAX_AGE_DAYS) {
     throw new Error(
-      `[dados] summary.json gerado há ${ageDays.toFixed(1)} dias (limite ${MAX_AGE_DAYS}). ` +
+      `[dados] dado mais recente é de ${s.asOf} (${ageDays.toFixed(1)} dias; limite ${MAX_AGE_DAYS}). ` +
         `Atualize os dados ou ajuste RADAR_MAX_DATA_AGE_DAYS.`,
     );
   }

@@ -59,3 +59,27 @@ def check(last_dates: dict[str, str], today: date) -> list[str]:
         if n > limit:
             problems.append(f"{ind.symbol}: último dado em {d} ({n} dias sem atualização; limite {limit})")
     return problems
+
+
+def main() -> int:
+    """`python -m pipeline.health`: falha (código 1) se houver dado desatualizado."""
+    import sys
+
+    from . import db
+    from .collectors import utc_today
+
+    for stream in (sys.stdout, sys.stderr):
+        stream.reconfigure(encoding="utf-8")
+    with db.connect() as conn:
+        problems = check(db.last_dates(conn), utc_today())
+    if problems:
+        print("Saúde do pipeline: dados desatualizados", file=sys.stderr)
+        for p in problems:
+            print(f"::error title=Dado desatualizado::{p}", file=sys.stderr)
+        return 1
+    print("Saúde do pipeline: ok")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
