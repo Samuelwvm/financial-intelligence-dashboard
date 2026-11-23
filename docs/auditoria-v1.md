@@ -216,6 +216,22 @@ Teste de referência: `pipeline/tests/test_export_vs_sqlite.py` recalcula essas 
 
 ---
 
-## 6. O que foi corrigido (atualizado ao fim da V2)
+## 6. O que foi corrigido na V2
 
-Ver a seção 4, coluna "V2". Detalhes de implementação em `docs/decisoes.md`.
+| # | Correção | Onde | Verificado por |
+|---|---|---|---|
+| 1 | Catálogo único com 29 ativos (inclui `^DJI`, `AMD`, `JBSS32.SA`, `2222.SR`) | `pipeline/assets.py` | pipeline do zero: 34/34 séries; `^DJI` em 23/11/2026 |
+| 2 | BCB sempre com janela de 400 dias + upsert; fallback `ultimos/20` | `pipeline/collectors.py` | IPCA 12m = 4,63% (out/2026), antes 3,81% (fev) |
+| 3 | Retry com backoff; falha explícita; nada gravado se mais da metade das coletas falhar; saúde falha o job | `collectors.py`, `run.py`, `health.py`, `update_data.yml` | `test_pipeline.py` (retry, saúde com o caso `^DJI` e IPCA da V1) |
+| 4–5 | Janela em dias corridos ancorada na última data; o mesmo período para card, gráfico, máx/mín e volatilidade | `pipeline/metrics.py` | `test_metrics.py`, `test_export_vs_sqlite.py` |
+| 6–7 | Coleta da janela inteira com upsert (recupera 08/07/2026, corrige preço parcial e ajuste de dividendos) | `db.upsert_prices` | `test_upsert_corrects_partial_price_and_fills_gap` |
+| 8 | Linhas `NaN`/≤0/futuras descartadas | `collectors.clean_rows` | `test_clean_rows_…` |
+| 9–10 | Cron `17 1 * * 2-6`, `permissions`, `concurrency`, `timeout-minutes`, cache, versões fixas, Dependabot | `.github/` | validação YAML; ver `hospedagem.md` |
+| 11 | Filtro "Câmbio" do glossário | `pipeline/glossary.py` | e2e "filtro Câmbio não fica vazio" |
+| 12 | `CL=F` = "Petróleo WTI" | `pipeline/assets.py` | — |
+| 13 | Índice `(symbol, date)`; métricas pré-calculadas (fim do N+1) | `pipeline/schema.sql` | `test_schema_has_symbol_date_index` |
+| 14 | Nome único "Radar Financeiro" | README, site | busca por "Easy Financ" no código: nada |
+| + | Aramco em riais sauditas (a V1 mostrava "$") e índices em pontos (a V1 mostrava "$5,432" no S&P) | `assets.currency`, `web/lib/format.ts` | `format-portfolio.test.ts` |
+| + | Banco fora do git (release `data-latest`), sem `push --force` | `update_data.yml` | — |
+
+Pendente (registrado em `ideias-futuras.md`): volatilidade de cripto com √365; separar macro de `assets_history`.

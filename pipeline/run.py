@@ -125,9 +125,15 @@ def main(argv: list[str] | None = None) -> int:
         print("Saúde do pipeline: ok (todos os ativos e indicadores atualizados)")
 
     if not args.no_export:
-        with db.connect() as conn:
-            docs = export.build(conn)
-        export.write(docs)
+        try:
+            with db.connect() as conn:
+                docs = export.build(conn)
+            export.write(docs)
+        except Exception as exc:  # noqa: BLE001 — falha clara; os JSON anteriores ficam intactos
+            with db.connect() as conn:
+                db.log_update(conn, "Erro", f"export: {exc}"[:500])
+            print(f"ERRO no export (JSON anteriores mantidos): {exc}", file=sys.stderr)
+            return 3
         print(f"Export: {len(docs)} arquivos JSON em {export.OUT_DIR}")
 
     details = (f"{len(result.ok)} séries coletadas, {len(result.failed)} falhas, "

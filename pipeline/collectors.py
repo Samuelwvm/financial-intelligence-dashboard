@@ -71,21 +71,29 @@ def fetch_yahoo(symbol: str, start: date) -> list[tuple[str, float]]:
     return [(idx.strftime("%Y-%m-%d"), float(v)) for idx, v in df["Close"].items()]
 
 
-def fetch_bcb(code: int, start: date, end: date) -> list[tuple[str, float]]:
-    url = (
-        f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{code}/dados"
-        f"?formato=json&dataInicial={start:%d/%m/%Y}&dataFinal={end:%d/%m/%Y}"
-    )
-    resp = requests.get(url, timeout=20, headers={"Accept": "application/json"})
-    resp.raise_for_status()
+def _bcb_get(url: str) -> list[tuple[str, float]]:
+    # O BCB às vezes responde 304 com corpo vazio (cache intermediário): exigimos 200 e pedimos no-cache.
+    resp = requests.get(url, timeout=20, headers={"Accept": "application/json", "Cache-Control": "no-cache"})
+    if resp.status_code != 200 or not resp.content:
+        raise CollectError(f"BCB: HTTP {resp.status_code}, {len(resp.content)} bytes")
     data = resp.json()
     if not isinstance(data, list):
-        raise CollectError(f"BCB {code}: formato inesperado")
+        raise CollectError("BCB: formato inesperado")
     rows = []
     for item in data:
         d, m, y = item["data"].split("/")
         rows.append((f"{y}-{m}-{d}", float(str(item["valor"]).replace(",", "."))))
     return rows
+
+
+def fetch_bcb(code: int, start: date, end: date) -> list[tuple[str, float]]:
+    """Janela inteira por datas; se o BCB falhar, cai para os últimos 20 valores
+    (suficiente para séries mensais e, nas diárias, o upsert preserva o histórico)."""
+    base = f"https://api.bcb.gov.br/dados/serie/bcdata.sgs.{code}/dados"
+    try:
+        return _bcb_get(f"{base}?formato=json&dataInicial={start:%d/%m/%Y}&dataFinal={end:%d/%m/%Y}")
+    except Exception:  # noqa: BLE001
+        return _bcb_get(f"{base}/ultimos/20?formato=json")
 
 
 def utc_today() -> date:

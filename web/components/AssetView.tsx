@@ -4,7 +4,6 @@ import { useCallback, useMemo, useState } from "react";
 import { PERIOD_LONG, formatPrice, formatSignedPct } from "@/lib/format";
 import { usePortfolio } from "@/lib/hooks";
 import type { AssetSeries, AssetSummary, Period } from "@/lib/schema";
-import { CountUp } from "./CountUp";
 import { LineChart } from "./LineChart";
 import { PeriodPicker } from "./PeriodPicker";
 import { Card, Chip, Stat } from "./ui";
@@ -40,9 +39,8 @@ export function AssetView({
     <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)] lg:items-start lg:gap-4">
       <Card i={0} className="mx-5 lg:mx-0" aria-label={`Preço de ${asset.name}`}>
         <div className="flex items-center justify-between gap-3">
-          <div className="num font-display text-[30px] font-semibold">
-            <CountUp value={asset.price} format={fmt} />
-          </div>
+          {/* Sem contagem animada aqui: o preço é o maior elemento da tela (LCP). */}
+          <div className="num font-display text-[30px] font-semibold">{fmt(asset.price)}</div>
           <Chip value={stats.ret} digits={chipDigits} />
         </div>
         <div className="mt-3 mb-1 lg:mt-4">
