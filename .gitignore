@@ -17,4 +17,4 @@ logs/*.log
 
 # Sistema Operacional
 .DS_Store
-thumbs.db
+thumbs.db.venv/
