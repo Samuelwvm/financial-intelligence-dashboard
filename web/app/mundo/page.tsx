@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Footer } from "@/components/Footer";
 import { AssetList, SeriesCard } from "@/components/Lists";
 import { Pulse } from "@/components/Market";
 import { PageHeader } from "@/components/ui";
@@ -27,6 +28,7 @@ export default function MundoPage() {
       </section>
       <AssetList id="acoes-globais" title="Ações globais" assets={stocks} start={7} />
       <AssetList id="commodities-indices" title="Commodities e índices" assets={others} start={8} />
+      <Footer attribution />
     </>
   );
 }

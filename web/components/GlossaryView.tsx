@@ -118,7 +118,10 @@ function Term({
             className="overflow-hidden"
           >
             <p className="mb-2 text-[15px] leading-[1.45] text-muted">{t.definition}</p>
-            <p className="mb-3.5 border-l-2 border-line pl-3 text-[14px] italic leading-[1.45] text-muted">{t.example}</p>
+            <div className="mb-3.5 rounded-r-xl border-l-2 border-pos bg-soft px-3 py-2.5">
+              <div className="text-[11px] font-bold tracking-[0.04em] text-pos">EXEMPLO</div>
+              <p className="mt-0.5 text-[14px] leading-[1.45] text-fg">{t.example}</p>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

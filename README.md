@@ -23,7 +23,7 @@
 - **Mundo:** 10 ações globais, dólar e euro contra o real, ouro, petróleo WTI, S&P 500 e Dow Jones.
 - **Cripto:** Bitcoin e Ethereum (preço, variação, máxima, mínima, volatilidade) e comparação base 100.
 - **Entenda o mercado:** glossário com 25 termos, busca e filtro por categoria.
-- Logos dos ativos ([Logos by AllInvestView](https://www.allinvestview.com/tools/ticker-logos/)), com iniciais quando não há logo, e dicas "Em linguagem simples" que se alternam no painel.
+- Logos dos ativos ([Logos by AllInvestView](https://www.allinvestview.com/tools/ticker-logos/)), com iniciais quando não há logo; dicas "Em linguagem simples" que se alternam; e um carrossel automático com todos os ativos (arraste para o lado; a borda verde marca os da sua carteira).
 
 Mobile-first, modo claro e escuro (segue o sistema, com troca manual sem "piscar"), animações com [Motion](https://motion.dev) que respeitam `prefers-reduced-motion`. Lighthouse mobile: 98–99 de performance e 100 em acessibilidade, boas práticas e SEO.
 

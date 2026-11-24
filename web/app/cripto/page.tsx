@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Footer } from "@/components/Footer";
 import { CryptoView } from "@/components/CryptoView";
 import { PageHeader } from "@/components/ui";
 import { getAsset, getSeries } from "@/lib/data";
@@ -16,6 +17,7 @@ export default function CriptoPage() {
     <>
       <PageHeader title="Cripto" subtitle={`Bitcoin e Ethereum em dólar · ${formatDate(btc.lastDate)}`} />
       <CryptoView btc={{ asset: btc, series: getSeries("bitcoin") }} eth={{ asset: eth, series: getSeries("ethereum") }} />
+      <Footer attribution />
     </>
   );
 }

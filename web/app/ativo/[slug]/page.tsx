@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Footer } from "@/components/Footer";
 import { AssetLogo } from "@/components/AssetLogo";
 import { AssetView } from "@/components/AssetView";
 import { PageHeader } from "@/components/ui";
@@ -36,6 +37,7 @@ export default async function AtivoPage({ params }: Props) {
         icon={asset.logoDomain ? <AssetLogo logo={asset.logo} ticker={asset.ticker} size={32} /> : undefined}
       />
       <AssetView asset={asset} series={series} portfolio={portfolio} />
+      <Footer attribution={Boolean(asset.logoDomain)} />
     </>
   );
 }

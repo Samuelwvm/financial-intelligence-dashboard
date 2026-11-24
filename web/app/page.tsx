@@ -1,3 +1,5 @@
+import { AssetTicker } from "@/components/AssetTicker";
+import { Footer } from "@/components/Footer";
 import { MacroCards, Pulse, plainTips } from "@/components/Market";
 import { PlainTips } from "@/components/PlainTips";
 import { Portfolio } from "@/components/Portfolio";
@@ -15,7 +17,7 @@ export default function PainelPage() {
       <Portfolio
         candidates={s.portfolio.candidates.map(getAsset)}
         defaults={s.portfolio.default}
-        benchmark={{ slug: bench.slug, name: bench.name }}
+        benchmark={bench}
         initial={getPortfolio("30d")}
       />
       <div className="flex gap-2 px-5 lg:flex-wrap lg:gap-4 lg:px-0">
@@ -23,6 +25,8 @@ export default function PainelPage() {
         <PlainTips tips={plainTips(s.macro, "web")} variant="web" />
       </div>
       <PlainTips tips={plainTips(s.macro, "mobile")} variant="mobile" />
+      <AssetTicker assets={s.assets} candidates={s.portfolio.candidates} defaults={s.portfolio.default} />
+      <Footer attribution />
     </>
   );
 }
