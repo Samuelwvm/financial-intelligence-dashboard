@@ -11,15 +11,17 @@ import { Chip } from "./ui";
 const PAUSE_MS = 20_000; // pausa ao tocar/arrastar: tempo para ler com calma
 const SPEED_PX_S = 30; // devagar
 const DRAG_PX = 8; // acima disso o gesto é arraste, não toque
+const STEP_PX = 186 * 2; // setas: dois cards por clique (card 176 + gap 10)
 
 /**
- * Carrossel automático com todos os ativos — uma faixa de rolagem de verdade:
- * - anda sozinho devagar, em loop (duas cópias; ao passar da metade volta sem emenda);
- * - arrastar com o dedo / trackpad / roda do mouse funciona em qualquer tela e pausa por 20 s;
- * - um toque com ele andando só pausa (20 s); parado, tocar num ativo abre a tela dele;
- * - mouse em cima ou foco do teclado pausam; botão de pausar sem prazo (WCAG 2.2.2);
- * - movimento reduzido: não anda sozinho (rolagem manual continua);
- * - ativos da "minha carteira" ganham borda verde e selo de check.
+ * Carrossel automático com todos os ativos — uma faixa de rolagem de verdade,
+ * que anda sozinha devagar em loop (duas cópias; ao passar da metade volta sem emenda).
+ * Experiência por tamanho de tela:
+ * - celular/tablet: o dedo pausa por 20 s e arrasta (rolagem nativa); tocar num ativo abre direto;
+ * - computador: mouse em cima pausa; clicar abre direto; setas ‹ › avançam (e pausam 20 s);
+ *   trackpad/roda também rolam.
+ * Comum: botão de pausar sem prazo (WCAG 2.2.2), foco do teclado pausa, movimento reduzido
+ * não anda sozinho, ativos da "minha carteira" com borda verde e selo de check.
  */
 export function AssetTicker({ assets, candidates, defaults }: { assets: AssetSummary[]; candidates: string[]; defaults: string[] }) {
   const [portfolio] = usePortfolio(candidates, defaults);
@@ -31,7 +33,7 @@ export function AssetTicker({ assets, candidates, defaults }: { assets: AssetSum
   const viewport = useRef<HTMLDivElement>(null);
   const pos = useRef(0);
   const lastSet = useRef(-1);
-  const down = useRef<{ x: number; y: number; wasMoving: boolean; dragged: boolean } | null>(null);
+  const down = useRef<{ x: number; y: number; dragged: boolean } | null>(null);
   const pausedRef = useRef(false);
 
   const tapPaused = pausedUntil > now;
@@ -91,16 +93,33 @@ export function AssetTicker({ assets, candidates, defaults }: { assets: AssetSum
     pauseFor();
   }
 
+  // Só um arraste não deve abrir o ativo; toque/clique simples abre direto.
   function onClickCapture(e: MouseEvent) {
     const d = down.current;
     down.current = null;
-    if (d && (d.wasMoving || d.dragged)) {
-      e.preventDefault(); // 1º toque com ele andando (ou fim de arraste): só pausa
+    if (d?.dragged) {
+      e.preventDefault();
       e.stopPropagation();
     }
   }
 
-  const status = held ? "Pausado" : tapPaused ? "Pausado por 20 s · toque num ativo para abrir" : null;
+  // Setas (computador): avança/volta dois cards com rolagem suave, mantendo o loop.
+  function stepBy(dir: 1 | -1) {
+    const el = viewport.current;
+    if (!el) return;
+    const half = el.scrollWidth / 2;
+    let cur = el.scrollLeft;
+    if (dir > 0 && cur + STEP_PX >= half) cur -= half;
+    if (dir < 0 && cur - STEP_PX <= 0) cur += half;
+    if (cur !== el.scrollLeft) {
+      lastSet.current = Math.round(cur);
+      el.scrollLeft = cur;
+    }
+    pauseFor();
+    el.scrollBy({ left: dir * STEP_PX, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
+  const status = held ? "Pausado" : tapPaused ? "Pausado por 20 s" : null;
 
   const item = (a: AssetSummary, copy: boolean) => {
     const inPortfolio = mine.has(a.slug);
@@ -150,34 +169,44 @@ export function AssetTicker({ assets, candidates, defaults }: { assets: AssetSum
             Todos os ativos
           </h2>
           <p className="text-[12px] text-muted" aria-live="polite">
-            {status ?? (
-              <>
-                <span className="mr-1 inline-block size-2 rounded-full bg-pos align-middle" aria-hidden="true" />
-                borda verde = na sua carteira · toque ou arraste para pausar
-              </>
-            )}
+            <span className="mr-1 inline-block size-2 rounded-full bg-pos align-middle" aria-hidden="true" />
+            borda verde = na sua carteira
+            <span className="lg:hidden"> · {status ?? "arraste para ver mais"}</span>
+            <span className="hidden lg:inline"> · {status ?? "passe o mouse para pausar"}</span>
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setHeld((h) => !h);
-            setPausedUntil(0);
-          }}
-          aria-pressed={held}
-          aria-label={held ? "Retomar o carrossel de ativos" : "Pausar o carrossel de ativos"}
-          className="flex size-11 shrink-0 items-center justify-center rounded-xl text-muted hover:text-fg"
-        >
-          {held ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M8 5v14l11-7z" />
+        <div className="flex shrink-0 items-center">
+          <button type="button" onClick={() => stepBy(-1)} aria-label="Ativos anteriores" className="hidden size-11 items-center justify-center rounded-xl text-muted hover:bg-soft hover:text-fg lg:flex">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 6l-6 6 6 6" />
             </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-              <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setHeld((h) => !h);
+              setPausedUntil(0);
+            }}
+            aria-pressed={held}
+            aria-label={held ? "Retomar o carrossel de ativos" : "Pausar o carrossel de ativos"}
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl text-muted hover:bg-soft hover:text-fg"
+          >
+            {held ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
+              </svg>
+            )}
+          </button>
+          <button type="button" onClick={() => stepBy(1)} aria-label="Próximos ativos" className="hidden size-11 items-center justify-center rounded-xl text-muted hover:bg-soft hover:text-fg lg:flex">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M9 6l6 6-6 6" />
             </svg>
-          )}
-        </button>
+          </button>
+        </div>
       </div>
       <div
         ref={viewport}
@@ -185,8 +214,8 @@ export function AssetTicker({ assets, candidates, defaults }: { assets: AssetSum
         onScroll={onScroll}
         onClickCapture={onClickCapture}
         onPointerDown={(e) => {
-          down.current = { x: e.clientX, y: e.clientY, wasMoving: !pausedRef.current, dragged: false };
-          pauseFor();
+          down.current = { x: e.clientX, y: e.clientY, dragged: false };
+          if (e.pointerType !== "mouse") pauseFor(); // celular: o dedo pausa (no computador, o hover já pausou)
         }}
         onPointerMove={(e) => {
           const d = down.current;

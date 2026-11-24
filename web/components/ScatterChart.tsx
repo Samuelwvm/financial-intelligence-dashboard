@@ -87,7 +87,7 @@ export function ScatterChart({ points, label, height = 220 }: { points: ScatterP
   const plotBottom = height - g.B;
 
   return (
-    <div ref={wrap} className="relative mt-3 w-full select-none" onPointerLeave={() => setActive(null)}>
+    <div ref={wrap} className="relative mt-3 mb-6 w-full select-none" onPointerLeave={() => setActive(null)}>
       <svg viewBox={`0 0 ${w} ${height}`} width="100%" height={height} role="img" aria-label={`${label}. ${desc}`} className="block overflow-visible">
         {/* grade e eixos */}
         {g.yT.map((t) => (
@@ -159,23 +159,31 @@ export function ScatterChart({ points, label, height = 220 }: { points: ScatterP
           </div>
         </div>
       )}
-      <p className="mt-1 text-[11px] text-muted">Quanto mais para cima e para a esquerda, mais retorno com menos risco.</p>
-      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted">
+      <p className="mt-2 border-t border-line pt-2 text-[12px] leading-snug text-muted">
+        Quanto mais <strong className="font-semibold text-fg">para cima e para a esquerda</strong>, mais retorno com menos risco.
+      </p>
+    </div>
+  );
+}
+
+/** Legenda do risco x retorno — fica ao lado do título do card. */
+export function ScatterLegend({ reference = true }: { reference?: boolean }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted">
+      <span>
+        <span className="mr-1 inline-block size-2 rounded-full bg-pos align-middle" aria-hidden="true" />
+        em alta
+      </span>
+      <span>
+        <span className="mr-1 inline-block size-2 rounded-full bg-neg align-middle" aria-hidden="true" />
+        em queda
+      </span>
+      {reference && (
         <span>
-          <span className="mr-1 inline-block size-2 rounded-full bg-pos align-middle" aria-hidden="true" />
-          em alta no período
+          <span className="mr-1 inline-block size-2 rounded-full border-2 border-fg align-middle" aria-hidden="true" />
+          Ibovespa
         </span>
-        <span>
-          <span className="mr-1 inline-block size-2 rounded-full bg-neg align-middle" aria-hidden="true" />
-          em queda
-        </span>
-        {points.some((p) => p.reference) && (
-          <span>
-            <span className="mr-1 inline-block size-2 rounded-full border-2 border-fg align-middle" aria-hidden="true" />
-            Ibovespa (referência)
-          </span>
-        )}
-      </div>
+      )}
     </div>
   );
 }

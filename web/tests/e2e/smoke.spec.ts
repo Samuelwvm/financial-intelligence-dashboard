@@ -80,6 +80,20 @@ test("carteira: editar ativos persiste no navegador", async ({ page }) => {
 
 test.describe("movimento reduzido", () => {
   test.use({ reducedMotion: "reduce" });
+  test("sem rolagem horizontal com movimento reduzido", async ({ page }) => {
+    await page.goto("/");
+    // O que importa para quem usa: a página não se desloca para o lado.
+    const x = await page.evaluate(() => {
+      window.scrollTo(500, 0);
+      return window.scrollX;
+    });
+    expect(x).toBe(0);
+    // e nada escapa da rolagem dos carrosséis (ex.: textos só para leitor de tela)
+    for (const r of ["/", "/brasil/", "/mundo/"]) {
+      await page.goto(r);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
+    }
+  });
   test("carrossel não anda sozinho com movimento reduzido", async ({ page }) => {
     await page.goto("/");
     const v = page.locator(".marquee-viewport");
@@ -139,33 +153,7 @@ test("glossário: exemplo destacado do texto de explicação", async ({ page }) 
   expect(bg).not.toBe("rgba(0, 0, 0, 0)");
 });
 
-test("carrossel: anda sozinho, 1º toque pausa sem navegar, 2º toque abre o ativo", async ({ page }) => {
-  await page.goto("/");
-  const section = page.locator("section", { has: page.getByRole("heading", { name: "Todos os ativos" }) });
-  const viewport = section.locator(".marquee-viewport");
-  const x = () => viewport.evaluate((el) => el.scrollLeft);
-  await viewport.evaluate((el) => el.scrollIntoView({ block: "center" })); // longe da tab bar fixa
-  const x0 = await x();
-  await page.waitForTimeout(1500);
-  expect(await x()).toBeGreaterThan(x0);
-  const spot = { position: { x: 120, y: 40 }, force: true };
-  await viewport.click(spot);
-  expect(new URL(page.url()).pathname).toBe("/");
-  await expect(section).toContainText("Pausado");
-  const p1 = await x();
-  await page.waitForTimeout(1200);
-  expect(await x()).toBe(p1);
-  await viewport.click(spot);
-  await expect(page).toHaveURL(/\/ativo\//);
-});
 
-test("carrossel: arrastar rola e pausa", async ({ page }) => {
-  await page.goto("/");
-  const viewport = page.locator(".marquee-viewport");
-  await viewport.evaluate((el) => el.scrollIntoView({ block: "center" }));
-  await viewport.evaluate((el) => el.scrollBy({ left: 400 }));
-  await expect(page.locator("section", { has: page.getByRole("heading", { name: "Todos os ativos" }) })).toContainText("Pausado");
-});
 
 test("carrossel: ativos da carteira têm indicativo", async ({ page }) => {
   await page.goto("/");
@@ -175,20 +163,71 @@ test("carrossel: ativos da carteira têm indicativo", async ({ page }) => {
   await expect(list.locator("a", { hasText: "Apple" })).not.toHaveClass(/border-pos/);
 });
 
-test("em linguagem simples: sem botões; troca ao arrastar e pelas setas", async ({ page }) => {
+
+const isWeb = () => test.info().project.name === "web";
+
+test("carrossel: anda sozinho e abre o ativo direto no toque/clique", async ({ page }) => {
+  await page.goto("/");
+  const viewport = page.locator(".marquee-viewport");
+  await viewport.evaluate((el) => el.scrollIntoView({ block: "center" })); // longe da tab bar fixa
+  const x = () => viewport.evaluate((el) => el.scrollLeft);
+  const x0 = await x();
+  await page.waitForTimeout(1500);
+  expect(await x()).toBeGreaterThan(x0);
+  await viewport.click({ position: { x: 120, y: 40 }, force: true });
+  await expect(page).toHaveURL(/\/ativo\//);
+});
+
+test("carrossel: web pausa com o mouse e tem setas; celular arrasta e pausa", async ({ page }) => {
+  await page.goto("/");
+  const section = page.locator("section", { has: page.getByRole("heading", { name: "Todos os ativos" }) });
+  const viewport = section.locator(".marquee-viewport");
+  await viewport.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const x = () => viewport.evaluate((el) => el.scrollLeft);
+  if (isWeb()) {
+    await viewport.hover({ position: { x: 300, y: 40 } });
+    const p1 = await x();
+    await page.waitForTimeout(1000);
+    expect(await x()).toBe(p1);
+    await page.mouse.move(0, 0);
+    const before = await x();
+    await section.getByRole("button", { name: "Próximos ativos" }).click();
+    await page.waitForTimeout(900);
+    expect(Math.abs((await x()) - before)).toBeGreaterThan(300);
+    await expect(section).toContainText("Pausado por 20 s");
+  } else {
+    await expect(section.getByRole("button", { name: "Próximos ativos" })).toBeHidden();
+    await viewport.evaluate((el) => el.scrollBy({ left: 400 }));
+    await expect(section).toContainText("Pausado por 20 s");
+  }
+});
+
+test("em linguagem simples: web usa setas e pontinhos; celular arrasta", async ({ page }) => {
   await page.goto("/");
   const card = page.locator("section", { has: page.getByRole("heading", { name: "EM LINGUAGEM SIMPLES" }) }).filter({ visible: true });
-  await expect(card.getByRole("button")).toHaveCount(0);
   const visible = () => card.locator("p[aria-hidden=false]").textContent();
   const first = await visible();
-  const box = (await card.boundingBox())!;
-  await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2);
-  await page.mouse.down();
-  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height / 2, { steps: 5 });
-  await page.mouse.up();
-  const second = await visible();
-  expect(second).not.toBe(first);
-  await card.focus();
-  await page.keyboard.press("ArrowLeft");
-  expect(await visible()).toBe(first);
+  if (isWeb()) {
+    await card.getByRole("button", { name: "Próxima dica" }).click();
+    expect(await visible()).not.toBe(first);
+    await card.getByRole("button", { name: "Dica anterior" }).click();
+    expect(await visible()).toBe(first);
+    // arrastar com o mouse NÃO troca no computador
+    const b = (await card.boundingBox())!;
+    await page.mouse.move(b.x + b.width * 0.8, b.y + b.height * 0.7);
+    await page.mouse.down();
+    await page.mouse.move(b.x + b.width * 0.2, b.y + b.height * 0.7, { steps: 5 });
+    await page.mouse.up();
+    expect(await visible()).toBe(first);
+  } else {
+    await expect(card.getByRole("button")).toHaveCount(0);
+    await card.evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      const y = r.top + r.height / 2;
+      const opts = { bubbles: true, pointerType: "touch", isPrimary: true, pointerId: 7 } as PointerEventInit;
+      el.dispatchEvent(new PointerEvent("pointerdown", { ...opts, clientX: r.right - 30, clientY: y }));
+      el.dispatchEvent(new PointerEvent("pointerup", { ...opts, clientX: r.left + 30, clientY: y }));
+    });
+    expect(await visible()).not.toBe(first);
+  }
 });

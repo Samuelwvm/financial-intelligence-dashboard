@@ -48,17 +48,28 @@ await mkdir(SHOTS, { recursive: true });
 const browser = await chromium.launch();
 for (const theme of ["light", "dark"]) {
   for (const [vp, size] of VIEWPORTS) {
-    const ctx = await browser.newContext({ viewport: size, deviceScaleFactor: 1, colorScheme: theme, reducedMotion: "reduce" });
+    const ctx = await browser.newContext({ viewport: size, deviceScaleFactor: 1, colorScheme: theme });
     await ctx.addInitScript((t) => localStorage.setItem("radar:tema", t), theme);
     const page = await ctx.newPage();
     for (const [name, route] of ROUTES) {
       if (only && name !== only) continue;
       await page.goto(BASE + route, { waitUntil: "networkidle" });
-      await page.waitForTimeout(300);
+      await page.waitForTimeout(1200); // fim das animações de entrada
       await page.screenshot({ path: path.join(SHOTS, `${name}-${vp}-${theme}.png`) });
-      await page.screenshot({ path: path.join(SHOTS, `${name}-${vp}-${theme}-full.png`), fullPage: true });
     }
     await ctx.close();
+    // Página inteira: o Playwright redimensiona a janela para capturar, o que reinicia as
+    // animações de entrada; com movimento reduzido elas não existem e a imagem sai completa.
+    const full = await browser.newContext({ viewport: size, deviceScaleFactor: 1, colorScheme: theme, reducedMotion: "reduce" });
+    await full.addInitScript((t) => localStorage.setItem("radar:tema", t), theme);
+    const fp = await full.newPage();
+    for (const [name, route] of ROUTES) {
+      if (only && name !== only) continue;
+      await fp.goto(BASE + route, { waitUntil: "networkidle" });
+      await fp.waitForTimeout(400);
+      await fp.screenshot({ path: path.join(SHOTS, `${name}-${vp}-${theme}-full.png`), fullPage: true });
+    }
+    await full.close();
   }
 }
 
