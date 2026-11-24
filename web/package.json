@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && node scripts/flatten-segments.mjs out",
+    "build": "node scripts/fetch-logos.mjs && next build && node scripts/flatten-segments.mjs out",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "screenshots": "node scripts/screenshots.mjs"
+    "screenshots": "node scripts/screenshots.mjs",
+    "logos": "node scripts/fetch-logos.mjs"
   },
   "dependencies": {
     "motion": "^14.14.0",

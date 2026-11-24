@@ -1,7 +1,7 @@
 // Carregamento dos JSON no build (Server Components). Valida o contrato e a
 // idade dos dados: o build FALHA se o dado estiver quebrado ou velho demais.
 import "server-only";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { cache } from "react";
 import type { z } from "zod";
@@ -42,6 +42,11 @@ export const getSummary = cache(() => {
       `[dados] dado mais recente é de ${s.asOf} (${ageDays.toFixed(1)} dias; limite ${MAX_AGE_DAYS}). ` +
         `Atualize os dados ou ajuste RADAR_MAX_DATA_AGE_DAYS.`,
     );
+  }
+  // Logo baixado no build (scripts/fetch-logos.mjs) ou null → o site mostra as iniciais.
+  const base = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
+  for (const a of s.assets) {
+    a.logo = existsSync(path.join(process.cwd(), "public", "logos", `${a.slug}.png`)) ? `${base}/logos/${a.slug}.png` : null;
   }
   const slugs = new Set(s.assets.map((a) => a.slug));
   for (const ref of [...s.pulse, ...s.portfolio.candidates, ...s.portfolio.default, s.portfolio.benchmark]) {

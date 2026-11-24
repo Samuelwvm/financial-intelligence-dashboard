@@ -32,14 +32,18 @@ Formato: **decisão** · motivo · alternativas consideradas.
 20. **Entrada dos cards com CSS (`@keyframes rise`, a mesma do mockup), não com Motion.** Assim a animação começa antes da hidratação e não esconde o HTML pré-renderizado, o que protege o LCP. O Motion cuida do resto: indicador de aba com `layoutId`, `pathLength` dos gráficos, acordeão com `AnimatePresence`, painéis, contagem e transição entre páginas (250 ms, desligada na primeira carga).
 21. **Contagem animada só nos números da carteira.** No preço do ativo ela atrasava o LCP para 6,6 s no Lighthouse. Sem ela, o LCP é 1,1 s.
 22. **Animações e SSR:** os valores iniciais do Motion são sempre os mesmos no servidor e no cliente. Com movimento reduzido, a duração vira 0 (em vez de pular a animação, o que deixava a linha invisível).
-23. **Logos: iniciais em círculo** em vez da CDN da AllInvestView usada na V1. Os logos são marcas de terceiros e a CDN exige atribuição, sem garantia de disponibilidade (a V1 já tinha 404 em Bradesco e Nubank). Iniciais não têm risco de licença, nem 404, nem requisição externa.
+23. **Logos da AllInvestView, baixados no build** (`web/scripts/fetch-logos.mjs`) e servidos pelo próprio site. Os termos permitem uso gratuito e cópia ("You may cache or proxy logos on your own servers"), exigindo um link visível e sem `nofollow` "Logos by AllInvestView", que fica no rodapé de todas as páginas. Baixar no build evita 404 no navegador (que pesaria no Lighthouse) e a dependência do CDN em tempo real. Os domínios ficam no catálogo do pipeline (`LOGO_DOMAINS`). Plano B em dois níveis, iniciais do ticker em círculo como na V1: (1) logo ausente no CDN (hoje só o Bradesco), (2) imagem que falha no navegador, inclusive antes da hidratação. Na tela do ativo, o logo só aparece para empresas e cripto; índices, câmbio e commodities ficam sem ícone.
 24. **Pós-build `flatten-segments.mjs`.** O Next 16.4 grava os arquivos de prefetch em subpastas, mas o cliente os pede com nome achatado. Sem a cópia, cada prefetch gerava um 404 no console.
 25. **`cacheComponents` desligado.** O scaffold do Next 16 vem com ele ligado, mas o export estático não precisa dele, e ele tornaria a leitura dos JSON "dinâmica".
 26. **Hospedagem: GitHub Pages publicado pelo próprio Actions.** Detalhes e comparação em `hospedagem.md`.
 
+27. **Rodapé discreto** em todas as páginas: o aviso legal da V1 (cálculos automáticos, não é recomendação de investimento, rentabilidade passada não garante retorno futuro) e a atribuição dos logos. Texto de 11px em cinza, depois do conteúdo.
+28. **"Em linguagem simples" rotativo:** 8 dicas (3 com SELIC, CDI e IPCA do dia), trocando a cada 8 s. Todas ficam empilhadas na mesma célula do grid, então o card não muda de altura (CLS 0). A troca pausa com mouse ou foco e com a aba em segundo plano. Há botões de pausar e avançar (WCAG 2.2.2), e com movimento reduzido o card não gira sozinho.
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.
+- **Logos, rodapé e dicas rotativas:** pedidos depois do mockup (§23, §27, §28). Seguem os mesmos tokens.
 - **Botão de tema:** o mockup não tem. Ele fica no topo à direita no mobile (ícone de 44px) e no rodapé da sidebar na web.
 - **Indicador da tab bar:** um traço de 2px no topo do item ativo, deslizante (`layoutId`), pedido no briefing. O mockup só muda a cor.
 - **Período "Hoje" em Cripto:** o mockup mostra 7d/30d/90d/1 ano, mas a V1 tinha "Último dia". Mantive os 5 períodos para não perder função.

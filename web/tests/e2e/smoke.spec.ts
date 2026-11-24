@@ -88,3 +88,42 @@ test.describe("movimento reduzido", () => {
     expect(anim).toBe("none");
   });
 });
+
+test("logos: mostra o logo quando existe e iniciais quando não (Bradesco)", async ({ page }) => {
+  await page.goto("/brasil/");
+  const petr = page.getByRole("link", { name: /Petrobras/ });
+  await expect(petr.locator("img")).toHaveAttribute("src", /logos\/petr4\.png$/);
+  const bbdc = page.getByRole("link", { name: /Bradesco/ });
+  await expect(bbdc.locator("img")).toHaveCount(0);
+  await expect(bbdc).toContainText("BB");
+});
+
+test("logos: imagem que falha no navegador vira iniciais", async ({ page }) => {
+  await page.route("**/logos/vale3.png", (r) => r.fulfill({ status: 404, body: "" }));
+  await page.goto("/brasil/");
+  const vale = page.getByRole("link", { name: /Vale/ });
+  await expect(vale.locator("img")).toHaveCount(0);
+  await expect(vale).toContainText("VA");
+});
+
+test("rodapé: aviso legal discreto e atribuição dos logos (link sem nofollow)", async ({ page }) => {
+  for (const r of ["/", "/mundo/", "/ativo/aapl/"]) {
+    await page.goto(r);
+    const footer = page.locator("footer");
+    await expect(footer).toContainText("não representam análise de valores mobiliários ou recomendação de investimento");
+    const link = footer.getByRole("link", { name: "Logos by AllInvestView" });
+    await expect(link).toHaveAttribute("href", "https://www.allinvestview.com/tools/ticker-logos/");
+    expect(await link.getAttribute("rel")).toBeNull();
+  }
+});
+
+test("em linguagem simples: troca de dica e pausa", async ({ page }) => {
+  await page.goto("/");
+  const card = page.locator("section", { has: page.getByRole("heading", { name: "EM LINGUAGEM SIMPLES" }) }).filter({ visible: true });
+  const visible = () => card.locator("p[aria-hidden=false]").textContent();
+  const first = await visible();
+  await card.getByRole("button", { name: "Próxima dica" }).click();
+  expect(await visible()).not.toBe(first);
+  await card.getByRole("button", { name: /Pausar/ }).click();
+  await expect(card.getByRole("button", { name: /Retomar/ })).toBeVisible();
+});

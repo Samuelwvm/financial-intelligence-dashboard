@@ -28,7 +28,17 @@ export function signedClass(v: number) {
 export { formatSignedPct };
 
 /** Cabeçalho de página. Mobile: eyebrow + título 26px; web: título 32px. */
-export function PageHeader({ title, subtitle, back }: { title: string; subtitle: ReactNode; back?: { href: string; label: string } }) {
+export function PageHeader({
+  title,
+  subtitle,
+  back,
+  icon,
+}: {
+  title: string;
+  subtitle: ReactNode;
+  back?: { href: string; label: string };
+  icon?: ReactNode;
+}) {
   return (
     <header className="flex items-start justify-between gap-3 px-5 pb-2 pt-[18px] lg:px-0 lg:pb-0 lg:pt-0">
       <div className="min-w-0">
@@ -42,7 +52,8 @@ export function PageHeader({ title, subtitle, back }: { title: string; subtitle:
         ) : (
           <div className="text-[12px] font-semibold tracking-[0.04em] text-pos lg:hidden">RADAR FINANCEIRO</div>
         )}
-        <h1 className="mt-0.5 font-display text-[26px] font-semibold leading-[1.15] text-fg lg:mt-0 lg:text-[32px] lg:font-bold">
+        <h1 className="mt-0.5 flex items-center gap-2.5 font-display text-[26px] font-semibold leading-[1.15] text-fg lg:mt-0 lg:text-[32px] lg:font-bold">
+          {icon}
           {title}
         </h1>
         <p className="mt-1 text-[14px] text-muted lg:text-[15px]">{subtitle}</p>
@@ -96,19 +107,6 @@ export function Stat({ label, value }: { label: string; value: ReactNode }) {
 
 export function Eyebrow({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`text-[13px] font-bold text-pos ${className}`}>{children}</div>;
-}
-
-/** Iniciais em círculo no lugar de logos (decisão de licença — ver docs/decisoes.md). */
-export function Avatar({ ticker }: { ticker: string }) {
-  const t = ticker.replace(/[^A-Z0-9]/gi, "").slice(0, 2).toUpperCase();
-  return (
-    <span
-      aria-hidden="true"
-      className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pos-soft font-display text-[13px] font-bold text-pos"
-    >
-      {t}
-    </span>
-  );
 }
 
 export function ErrorNote({ children }: { children: ReactNode }) {

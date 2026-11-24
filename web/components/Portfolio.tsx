@@ -5,6 +5,7 @@ import { PERIOD_LABEL, PERIOD_LONG, formatSignedPct } from "@/lib/format";
 import { usePortfolio, usePortfolioData } from "@/lib/hooks";
 import { curveReturn, portfolioCurve, seriesCurve } from "@/lib/portfolio";
 import type { AssetSummary, Period, PortfolioData } from "@/lib/schema";
+import { AssetLogo } from "./AssetLogo";
 import { CountUp } from "./CountUp";
 import { IconCheck } from "./icons";
 import { LineChart, type ChartSeries } from "./LineChart";
@@ -196,6 +197,7 @@ function EditList({ candidates, selected, onSave }: { candidates: AssetSummary[]
                   >
                     {on && <IconCheck size={16} />}
                   </span>
+                  <AssetLogo logo={c.logo} ticker={c.ticker} size={32} />
                   <span className="flex-1 text-[15px] font-semibold">{c.name}</span>
                   <span className="text-[13px] text-muted">{c.ticker}</span>
                 </label>

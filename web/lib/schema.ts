@@ -19,6 +19,10 @@ export const assetSummary = z.object({
   kind: z.enum(["acao", "indice", "moeda", "commodity", "cripto"]),
   currency: z.enum(["BRL", "USD", "SAR", "PTS"]),
   market: z.string(),
+  /** Domínio do logo no CDN da AllInvestView (null = sem logo, usa iniciais). */
+  logoDomain: z.string().nullable().optional(),
+  /** Caminho do logo baixado no build (preenchido em lib/data.ts, não vem do JSON). */
+  logo: z.string().nullable().optional(),
   lastDate: isoDate,
   price: positive,
   change: finite,

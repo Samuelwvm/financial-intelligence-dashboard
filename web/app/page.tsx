@@ -1,4 +1,5 @@
-import { MacroCards, PlainLanguage, Pulse } from "@/components/Market";
+import { MacroCards, Pulse, plainTips } from "@/components/Market";
+import { PlainTips } from "@/components/PlainTips";
 import { Portfolio } from "@/components/Portfolio";
 import { PageHeader } from "@/components/ui";
 import { getAsset, getPortfolio, getSummary } from "@/lib/data";
@@ -19,9 +20,9 @@ export default function PainelPage() {
       />
       <div className="flex gap-2 px-5 lg:flex-wrap lg:gap-4 lg:px-0">
         <MacroCards macro={s.macro} start={3} />
-        <PlainLanguage i={7} variant="web" />
+        <PlainTips tips={plainTips(s.macro, "web")} variant="web" />
       </div>
-      <PlainLanguage i={6} variant="mobile" mobileExtra="Toque num número para ver o que ele significa." />
+      <PlainTips tips={plainTips(s.macro, "mobile")} variant="mobile" />
     </>
   );
 }

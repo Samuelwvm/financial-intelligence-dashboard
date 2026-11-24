@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from . import db
-from .assets import ASSETS, BY_SYMBOL, DEFAULT_PORTFOLIO, INDICATORS, PORTFOLIO_CANDIDATES, PULSE
+from .assets import ASSETS, BY_SYMBOL, DEFAULT_PORTFOLIO, INDICATORS, LOGO_DOMAINS, PORTFOLIO_CANDIDATES, PULSE
 from .glossary import CATEGORIES, GLOSSARY
 from .metrics import PERIODS, align_ffill, base100, daily_change, period_stats
 
@@ -34,6 +34,7 @@ def _asset_summary(a, series) -> dict:
     return {
         "symbol": a.symbol, "slug": a.slug, "name": a.name, "ticker": a.ticker,
         "group": a.group, "kind": a.kind, "currency": a.currency, "market": a.market,
+        "logoDomain": LOGO_DOMAINS.get(a.symbol),
         "lastDate": series[-1][0], "price": _r(series[-1][1]), "change": _r(daily_change(series)),
         "stats": stats,
     }
