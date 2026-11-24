@@ -17,7 +17,7 @@ import { Card, Chip, ErrorNote } from "./ui";
 type Props = {
   candidates: AssetSummary[];
   defaults: string[];
-  benchmark: { slug: string; name: string };
+  benchmark: AssetSummary;
   initial: PortfolioData;
 };
 
@@ -39,7 +39,10 @@ export function Portfolio({ candidates, defaults, benchmark, initial }: Props) {
     period === "1d"
       ? selected.reduce((a, s) => a + s.stats["1d"].ret, 0) / Math.max(1, selected.length)
       : curveReturn(curve);
-  const scatter = selected.map((s) => ({ id: s.slug, label: s.ticker, risk: s.stats[period].vol, ret: s.stats[period].ret }));
+  const scatter = [
+    ...selected.map((s) => ({ id: s.slug, label: s.ticker, risk: s.stats[period].vol, ret: s.stats[period].ret })),
+    { id: benchmark.slug, label: benchmark.ticker, risk: benchmark.stats[period].vol, ret: benchmark.stats[period].ret, reference: true },
+  ];
 
   const perfSeries: ChartSeries[] = [
     { id: "carteira", label: "Minha carteira", points: curve, tone: "pos", area: true, width: 3 },

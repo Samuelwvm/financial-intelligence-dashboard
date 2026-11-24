@@ -183,3 +183,13 @@ body {
     transform: none;
   }
 }
+
+/* Carrossel "Todos os ativos": faixa rolável com 2 cópias (loop feito em AssetTicker.tsx). */
+.marquee-viewport {
+  mask-image: linear-gradient(90deg, transparent, #000 20px, #000 calc(100% - 20px), transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .marquee-copy {
+    display: none;
+  }
+}

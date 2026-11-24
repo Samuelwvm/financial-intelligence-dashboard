@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { MotionConfig } from "motion/react";
-import { Footer } from "@/components/Footer";
 import { Sidebar, TabBar } from "@/components/Nav";
 import { themeScript } from "@/components/ThemeToggle";
 import { getSummary } from "@/lib/data";
@@ -54,7 +53,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               className="mx-auto flex w-full max-w-[1200px] flex-col pb-[calc(88px+env(safe-area-inset-bottom))] lg:px-8 lg:py-8 lg:pb-10"
             >
               {children}
-              <Footer />
             </main>
           </div>
           <TabBar groups={groups} />

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Footer } from "@/components/Footer";
 import { GlossaryView } from "@/components/GlossaryView";
 import { PageHeader } from "@/components/ui";
 import { getGlossary } from "@/lib/data";
@@ -14,6 +15,7 @@ export default function EntendaPage() {
     <>
       <PageHeader title="Entenda o mercado" subtitle="Termos explicados sem complicação" />
       <GlossaryView glossary={g} />
+      <Footer disclaimer />
     </>
   );
 }

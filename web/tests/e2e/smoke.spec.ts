@@ -80,6 +80,13 @@ test("carteira: editar ativos persiste no navegador", async ({ page }) => {
 
 test.describe("movimento reduzido", () => {
   test.use({ reducedMotion: "reduce" });
+  test("carrossel não anda sozinho com movimento reduzido", async ({ page }) => {
+    await page.goto("/");
+    const v = page.locator(".marquee-viewport");
+    const x0 = await v.evaluate((el) => el.scrollLeft);
+    await page.waitForTimeout(1200);
+    expect(await v.evaluate((el) => el.scrollLeft)).toBe(x0);
+  });
   test("conteúdo visível e linhas desenhadas sem animação", async ({ page }) => {
     await page.goto("/cripto/");
     const line = page.locator("svg[role=img] path[stroke='var(--pos)']").first();
@@ -106,24 +113,82 @@ test("logos: imagem que falha no navegador vira iniciais", async ({ page }) => {
   await expect(vale).toContainText("VA");
 });
 
-test("rodapé: aviso legal discreto e atribuição dos logos (link sem nofollow)", async ({ page }) => {
-  for (const r of ["/", "/mundo/", "/ativo/aapl/"]) {
+test("rodapé: aviso legal só no Entenda; atribuição dos logos onde há logos", async ({ page }) => {
+  const cases: [string, boolean][] = [["/", true], ["/brasil/", true], ["/mundo/", true], ["/cripto/", true], ["/ativo/aapl/", true], ["/entenda/", false], ["/ativo/ibovespa/", false]];
+  const aviso = "não representam análise de valores mobiliários ou recomendação de investimento";
+  for (const [r, logos] of cases) {
     await page.goto(r);
     const footer = page.locator("footer");
-    await expect(footer).toContainText("não representam análise de valores mobiliários ou recomendação de investimento");
+    if (r === "/entenda/") await expect(footer).toContainText(aviso);
+    else await expect(page.getByText(aviso)).toHaveCount(0);
     const link = footer.getByRole("link", { name: "Logos by AllInvestView" });
-    await expect(link).toHaveAttribute("href", "https://www.allinvestview.com/tools/ticker-logos/");
-    expect(await link.getAttribute("rel")).toBeNull();
+    if (logos) {
+      await expect(link).toHaveAttribute("href", "https://www.allinvestview.com/tools/ticker-logos/");
+      expect(await link.getAttribute("rel")).toBeNull();
+    } else {
+      await expect(link).toHaveCount(0);
+    }
   }
 });
 
-test("em linguagem simples: troca de dica e pausa", async ({ page }) => {
+test("glossário: exemplo destacado do texto de explicação", async ({ page }) => {
+  await page.goto("/entenda/");
+  const ex = page.getByText("EXEMPLO").first();
+  await expect(ex).toBeVisible();
+  const bg = await ex.locator("..").evaluate((el) => getComputedStyle(el).backgroundColor);
+  expect(bg).not.toBe("rgba(0, 0, 0, 0)");
+});
+
+test("carrossel: anda sozinho, 1º toque pausa sem navegar, 2º toque abre o ativo", async ({ page }) => {
+  await page.goto("/");
+  const section = page.locator("section", { has: page.getByRole("heading", { name: "Todos os ativos" }) });
+  const viewport = section.locator(".marquee-viewport");
+  const x = () => viewport.evaluate((el) => el.scrollLeft);
+  await viewport.evaluate((el) => el.scrollIntoView({ block: "center" })); // longe da tab bar fixa
+  const x0 = await x();
+  await page.waitForTimeout(1500);
+  expect(await x()).toBeGreaterThan(x0);
+  const spot = { position: { x: 120, y: 40 }, force: true };
+  await viewport.click(spot);
+  expect(new URL(page.url()).pathname).toBe("/");
+  await expect(section).toContainText("Pausado");
+  const p1 = await x();
+  await page.waitForTimeout(1200);
+  expect(await x()).toBe(p1);
+  await viewport.click(spot);
+  await expect(page).toHaveURL(/\/ativo\//);
+});
+
+test("carrossel: arrastar rola e pausa", async ({ page }) => {
+  await page.goto("/");
+  const viewport = page.locator(".marquee-viewport");
+  await viewport.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  await viewport.evaluate((el) => el.scrollBy({ left: 400 }));
+  await expect(page.locator("section", { has: page.getByRole("heading", { name: "Todos os ativos" }) })).toContainText("Pausado");
+});
+
+test("carrossel: ativos da carteira têm indicativo", async ({ page }) => {
+  await page.goto("/");
+  const list = page.locator("ul[aria-label=Ativos]");
+  await expect(list.locator("a", { hasText: "na sua carteira" })).toHaveCount(6);
+  await expect(list.locator("a", { hasText: "Petrobras" })).toHaveClass(/border-pos/);
+  await expect(list.locator("a", { hasText: "Apple" })).not.toHaveClass(/border-pos/);
+});
+
+test("em linguagem simples: sem botões; troca ao arrastar e pelas setas", async ({ page }) => {
   await page.goto("/");
   const card = page.locator("section", { has: page.getByRole("heading", { name: "EM LINGUAGEM SIMPLES" }) }).filter({ visible: true });
+  await expect(card.getByRole("button")).toHaveCount(0);
   const visible = () => card.locator("p[aria-hidden=false]").textContent();
   const first = await visible();
-  await card.getByRole("button", { name: "Próxima dica" }).click();
-  expect(await visible()).not.toBe(first);
-  await card.getByRole("button", { name: /Pausar/ }).click();
-  await expect(card.getByRole("button", { name: /Retomar/ })).toBeVisible();
+  const box = (await card.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.8, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.2, box.y + box.height / 2, { steps: 5 });
+  await page.mouse.up();
+  const second = await visible();
+  expect(second).not.toBe(first);
+  await card.focus();
+  await page.keyboard.press("ArrowLeft");
+  expect(await visible()).toBe(first);
 });

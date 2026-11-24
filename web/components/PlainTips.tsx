@@ -1,24 +1,26 @@
 "use client";
 
 import { useReducedMotion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const INTERVAL_MS = 8000;
+const SWIPE_PX = 40;
 
 /**
  * "Em linguagem simples" com dicas que se alternam.
  * - todas as frases ficam empilhadas na mesma célula do grid: o card assume a
  *   altura da maior e não "pula" ao trocar (sem layout shift);
- * - troca a cada 8 s; pausa com mouse/foco em cima ou com a aba em segundo plano;
- * - botões de pausar e avançar (conteúdo que se move sozinho precisa de controle — WCAG 2.2.2);
- * - com movimento reduzido não gira sozinho (só pelo botão "próxima").
+ * - troca a cada 8 s; pausa com o mouse em cima, com foco de teclado ou com a aba em segundo plano;
+ * - arrastar para o lado troca de dica (qualquer tela; pensado para o toque);
+ * - pontinhos discretos mostram a posição; com movimento reduzido não gira sozinho.
  */
 export function PlainTips({ tips, variant }: { tips: string[]; variant: "mobile" | "web" }) {
   const reduce = useReducedMotion();
   const [i, setI] = useState(0);
-  const [paused, setPaused] = useState(false);
   const [hover, setHover] = useState(false);
-  const running = !paused && !hover && !reduce && tips.length > 1;
+  const [tick, setTick] = useState(0); // reinicia o intervalo depois de um arraste
+  const start = useRef<{ x: number; y: number } | null>(null);
+  const running = !hover && !reduce && tips.length > 1;
 
   useEffect(() => {
     if (!running) return;
@@ -26,61 +28,65 @@ export function PlainTips({ tips, variant }: { tips: string[]; variant: "mobile"
       if (document.visibilityState === "visible") setI((n) => (n + 1) % tips.length);
     }, INTERVAL_MS);
     return () => clearInterval(t);
-  }, [running, tips.length]);
+  }, [running, tips.length, tick]);
+
+  const go = (d: number) => {
+    setI((n) => (n + d + tips.length) % tips.length);
+    setTick((t) => t + 1);
+  };
 
   const web = variant === "web";
   const id = `simples-${variant}`;
-  const btn = `flex size-11 items-center justify-center rounded-xl ${web ? "text-hl-muted hover:text-hl-fg" : "text-muted hover:text-fg"}`;
 
   return (
     <section
-      style={{ "--i": web ? 7 : 6 } as React.CSSProperties}
+      style={{ "--i": web ? 7 : 6, touchAction: "pan-y" } as React.CSSProperties}
       className={
         web
           ? "rise lift hidden flex-[2_1_320px] rounded-[18px] bg-hl p-5 text-hl-fg lg:block"
           : "rise lift mx-5 rounded-2xl border border-line bg-card p-4 lg:hidden"
       }
       aria-labelledby={id}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onFocus={() => setHover(true)}
+      aria-roledescription="carrossel"
+      onPointerEnter={(e) => e.pointerType === "mouse" && setHover(true)}
+      onPointerLeave={(e) => e.pointerType === "mouse" && setHover(false)}
+      onFocus={(e) => (e.target as HTMLElement).matches(":focus-visible") && setHover(true)}
       onBlur={() => setHover(false)}
+      onPointerDown={(e) => {
+        start.current = { x: e.clientX, y: e.clientY };
+      }}
+      onPointerUp={(e) => {
+        const s = start.current;
+        start.current = null;
+        if (!s) return;
+        const dx = e.clientX - s.x;
+        if (Math.abs(dx) > SWIPE_PX && Math.abs(dx) > Math.abs(e.clientY - s.y)) go(dx < 0 ? 1 : -1);
+      }}
+      onPointerCancel={() => (start.current = null)}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowRight") go(1);
+        if (e.key === "ArrowLeft") go(-1);
+      }}
+      tabIndex={0}
     >
-      <div className="-my-2.5 -mr-2.5 flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2">
         <h2 id={id} className={web ? "text-[12px] font-bold tracking-[0.04em] text-hl-accent" : "text-[13px] font-bold text-pos"}>
           EM LINGUAGEM SIMPLES
         </h2>
         {tips.length > 1 && (
-          <div className="flex items-center">
-            <span className={`num mr-1 text-[11px] ${web ? "text-hl-muted" : "text-muted"}`} aria-hidden="true">
-              {i + 1}/{tips.length}
-            </span>
-            <button
-              type="button"
-              className={btn}
-              onClick={() => setPaused((p) => !p)}
-              aria-label={paused || reduce ? "Retomar troca automática das dicas" : "Pausar troca automática das dicas"}
-              aria-pressed={paused}
-            >
-              {paused || reduce ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                  <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
-                </svg>
-              )}
-            </button>
-            <button type="button" className={btn} onClick={() => setI((n) => (n + 1) % tips.length)} aria-label="Próxima dica">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M9 6l6 6-6 6" />
-              </svg>
-            </button>
-          </div>
+          <span className="flex gap-1" aria-hidden="true">
+            {tips.map((_, n) => (
+              <span
+                key={n}
+                className={`h-1.5 rounded-full transition-all duration-300 motion-reduce:transition-none ${
+                  n === i ? `w-3.5 ${web ? "bg-hl-accent" : "bg-pos"}` : `w-1.5 ${web ? "bg-hl-line" : "bg-line"}`
+                }`}
+              />
+            ))}
+          </span>
         )}
       </div>
-      <div className={`grid ${web ? "mt-2" : "mt-1.5"}`} aria-live={running ? "off" : "polite"}>
+      <div className={`grid select-none ${web ? "mt-2" : "mt-1.5"}`} aria-live={running ? "off" : "polite"}>
         {tips.map((t, n) => (
           <p
             key={n}
@@ -93,6 +99,9 @@ export function PlainTips({ tips, variant }: { tips: string[]; variant: "mobile"
           </p>
         ))}
       </div>
+      <span className="sr-only">
+        Dica {i + 1} de {tips.length}. Arraste para o lado ou use as setas do teclado para trocar.
+      </span>
     </section>
   );
 }

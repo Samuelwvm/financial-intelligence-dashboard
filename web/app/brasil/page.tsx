@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Footer } from "@/components/Footer";
 import { AssetList, SeriesCard } from "@/components/Lists";
 import { MacroCards } from "@/components/Market";
 import { PageHeader } from "@/components/ui";
@@ -22,6 +23,7 @@ export default function BrasilPage() {
       <section aria-label="Juros e inflação" className="flex gap-2 px-5 lg:gap-4 lg:px-0">
         <MacroCards macro={s.macro} start={4} />
       </section>
+      <Footer attribution />
     </>
   );
 }
