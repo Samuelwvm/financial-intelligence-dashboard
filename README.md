@@ -18,7 +18,7 @@
 
 ## O que tem
 
-- **Painel:** pulso do mercado (Ibovespa, S&P 500, Dow Jones, dólar e euro); sua carteira com desempenho base 100 contra o Ibovespa, o CDI e a inflação (IPCA), e gráfico de risco × retorno; SELIC, CDI e IPCA do Banco Central.
+- **Painel:** pulso do mercado (Ibovespa, S&P 500, Dow Jones, dólar e euro); sua carteira com desempenho base 100 contra o Ibovespa e gráfico de risco × retorno; SELIC, CDI e IPCA do Banco Central.
 - **Brasil:** 10 ações da B3, evolução do Ibovespa e tela de cada ativo com período Hoje / 7d / 30d / 90d / 1 ano.
 - **Mundo:** 10 ações globais, dólar e euro contra o real, ouro, petróleo WTI, S&P 500 e Dow Jones.
 - **Cripto:** Bitcoin e Ethereum (preço, variação, máxima, mínima, volatilidade) e comparação base 100.
@@ -75,8 +75,6 @@ Para cada ativo, com a janela em **dias corridos** contada a partir da última d
 | Volatilidade | desvio-padrão amostral dos retornos diários do período × √252 |
 | Máxima / mínima | maior / menor preço do período |
 | Carteira | média simples das curvas base 100 dos ativos escolhidos |
-| CDI acumulado | produto, por dia útil, de `(1 + CDI anual)^(1/252)` |
-| IPCA acumulado | pró-rata por dia: `(1 + IPCA do mês)^(1/dias do mês)` |
 
 ## Fontes de dados
 

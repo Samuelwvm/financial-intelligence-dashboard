@@ -1,4 +1,8 @@
-"""CDI e IPCA acumulados (referências do gráfico de desempenho da carteira)."""
+"""CDI e IPCA acumulados (referências do gráfico de desempenho da carteira).
+
+A feature está DESATIVADA no site (docs/decisoes.md §35–37): as linhas ficavam retas nos
+períodos curtos. As funções e estes testes ficam ativos para reativar com segurança.
+"""
 
 from datetime import date, timedelta
 

@@ -21,9 +21,7 @@
   --primary: #0b6e55;
   --primary-fg: #ffffff;
   --inverse-fg: #ffffff; /* texto sobre o chip ativo (fundo = --fg) */
-  /* Referências do gráfico de desempenho (fora do mockup; contraste AA sobre o card) */
-  --series-cdi: #2563a8;
-  --series-ipca: #9a6200;
+  /* FEATURE DESATIVADA (CDI/IPCA no gráfico): --series-cdi: #2563a8; --series-ipca: #9a6200; */
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
@@ -41,8 +39,7 @@
   --soft: #1b2722;
   --hl: #12382d;
   --inverse-fg: #0b1210;
-  --series-cdi: #7fb2f0;
-  --series-ipca: #e7b04f;
+  /* FEATURE DESATIVADA: --series-cdi: #7fb2f0; --series-ipca: #e7b04f; */
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
@@ -62,8 +59,7 @@
     --soft: #1b2722;
     --hl: #12382d;
     --inverse-fg: #0b1210;
-  --series-cdi: #7fb2f0;
-  --series-ipca: #e7b04f;
+  /* FEATURE DESATIVADA: --series-cdi: #7fb2f0; --series-ipca: #e7b04f; */
     --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   }
 }
@@ -87,8 +83,7 @@
   --color-primary: var(--primary);
   --color-primary-fg: var(--primary-fg);
   --color-inverse-fg: var(--inverse-fg);
-  --color-series-cdi: var(--series-cdi);
-  --color-series-ipca: var(--series-ipca);
+  /* FEATURE DESATIVADA: --color-series-cdi / --color-series-ipca */
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-space-grotesk), var(--font-inter), sans-serif;
   --breakpoint-lg: 64rem; /* 1024px: sidebar */

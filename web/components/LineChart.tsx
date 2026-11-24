@@ -14,6 +14,7 @@ export type ChartSeries = {
   width?: number;
 };
 
+// cdi/ipca: tons da feature CDI/IPCA (desativada); as variáveis CSS estão comentadas em globals.css.
 const STROKE = { pos: "var(--pos)", fg: "var(--fg)", accent: "var(--hl-accent)", cdi: "var(--series-cdi)", ipca: "var(--series-ipca)" } as const;
 
 const useIsoLayoutEffect = typeof window === "undefined" ? () => {} : useLayoutEffect;

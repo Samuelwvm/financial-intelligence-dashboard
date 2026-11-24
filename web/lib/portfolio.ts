@@ -95,7 +95,11 @@ export function rebaseAt(points: Point[], start: string | undefined): Point[] {
   return out;
 }
 
-export const REFERENCES = [
-  { id: "cdi", label: "CDI", tone: "cdi", dashed: "2 3" },
-  { id: "ipca", label: "IPCA", tone: "ipca", dashed: "8 3 2 3" },
-] as const;
+/*
+ * FEATURE DESATIVADA — referências CDI e IPCA no gráfico de desempenho (docs/decisoes.md §35–37).
+ *
+ * export const REFERENCES = [
+ *   { id: "cdi", label: "CDI", tone: "cdi", dashed: "2 3" },
+ *   { id: "ipca", label: "IPCA", tone: "ipca", dashed: "8 3 2 3" },
+ * ] as const;
+ */

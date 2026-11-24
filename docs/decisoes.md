@@ -54,12 +54,23 @@ Formato: **decisão** · motivo · alternativas consideradas.
 33. **Risco x retorno:** a legenda (em alta / em queda / Ibovespa) fica na linha do título; a frase de leitura fica abaixo do gráfico, separada por uma linha, com respiro antes do botão "Editar ativos da carteira". O gráfico de desempenho ao lado passou para 240px para equilibrar a altura dos dois cards.
 34. **Textos só para leitor de tela (`.sr-only`) com `top: 0; left: 0`.** Sem coordenadas, um elemento `position: absolute` fica na posição "estática" e, sem ancestral posicionado, escapa da rolagem dos carrosséis — com movimento reduzido a página ganhava ~250px de largura invisíveis. Teste e2e dedicado.
 
-35. **Carteira comparada ao CDI e à inflação (IPCA)** no gráfico de desempenho, além do Ibovespa. Todas as linhas começam em 100 no 1º dia da carteira (rebase no navegador) e cada referência liga/desliga pela legenda, que mostra quanto ela rendeu no período. Calculado no pipeline, sem fonte nova (as séries CDI 4389 e IPCA 433 já eram coletadas):
+35. **[DESATIVADA — ver §37] Carteira comparada ao CDI e à inflação (IPCA)** no gráfico de desempenho, além do Ibovespa. Todas as linhas começam em 100 no 1º dia da carteira (rebase no navegador) e cada referência liga/desliga pela legenda, que mostra quanto ela rendeu no período. Calculado no pipeline, sem fonte nova (as séries CDI 4389 e IPCA 433 já eram coletadas):
     - **CDI acumulado:** composto por dia útil, fator `(1 + taxa_anual)^(1/252)` (convenção do CDI). Dias úteis recentes ainda não publicados pelo BCB (atraso de 1–2 dias) usam a última taxa; feriados do histórico não rendem.
     - **IPCA acumulado:** pró-rata por dia corrido, `(1 + IPCA_mês)^(1/dias_do_mês)`; meses ainda não divulgados usam o último IPCA conhecido.
     - Conferência: IPCA acumulado de 1 ano = +4,62% × IPCA 12 meses oficial (série 13522) = 4,63%.
     - Cores novas (fora do mockup, que só tem positivo/texto): CDI azul e IPCA âmbar, com contraste AA nos dois temas e tracejado diferente em cada linha (não depende só de cor).
 36. **Correção: indicadores podem ser zero ou negativos.** A limpeza descartava valores ≤ 0 também nos dados do BCB, e o IPCA de ago/2026 (−0,32%, deflação) era jogado fora. Preços continuam exigindo > 0; indicadores não.
+
+37. **Por que a feature CDI/IPCA foi desativada (comentada no código).** Medido nos dados reais: as linhas percorrem só uma pequena parte da altura do gráfico, porque a bolsa varia muito mais que a renda fixa:
+
+    | Período | CDI | IPCA |
+    |---|---|---|
+    | Hoje / 7d | 11% | 1,5% |
+    | 30d (padrão) | 6% | 0,8% |
+    | 90d | 13% | 4% |
+    | 1 ano | 33% | 11% |
+
+    No período padrão elas viravam linhas retas no topo, puro ruído visual. O código ficou comentado com a marcação `FEATURE DESATIVADA` (`web/components/Portfolio.tsx`, `web/lib/portfolio.ts`, `web/app/globals.css`, `pipeline/export.py` e os testes de contrato e e2e). As funções `cdi_index`/`ipca_index` continuam em `pipeline/metrics.py`, com testes ativos. Se um dia fizer sentido, as alternativas são: mostrar só no período de 1 ano, ou como número ("o CDI rendeu +1,1% no mesmo período") em vez de linha. A correção do §36 (IPCA negativo) continua ativa, porque é um bug independente.
 
 ## Adaptações em relação ao mockup
 
