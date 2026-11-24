@@ -10,7 +10,7 @@ import { CountUp } from "./CountUp";
 import { IconCheck } from "./icons";
 import { LineChart, type ChartSeries } from "./LineChart";
 import { PeriodPicker } from "./PeriodPicker";
-import { ScatterChart } from "./ScatterChart";
+import { ScatterChart, ScatterLegend } from "./ScatterChart";
 import { Sheet } from "./Sheet";
 import { Card, Chip, ErrorNote } from "./ui";
 
@@ -128,13 +128,16 @@ export function Portfolio({ candidates, defaults, benchmark, initial }: Props) {
             </div>
             <PeriodPicker value={period} onChange={setPeriod} label="Período da carteira" />
           </div>
-          <div className="mt-4">{chart(200)}</div>
+          <div className="mt-4">{chart(240)}</div>
           {legend}
         </Card>
         <Card i={6} className="flex min-w-0 flex-[1_1_280px] flex-col" aria-labelledby="risk-w">
-          <h2 id="risk-w" className="text-[13px] font-semibold text-muted">
-            Risco x retorno
-          </h2>
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <h2 id="risk-w" className="text-[13px] font-semibold text-muted">
+              Risco x retorno
+            </h2>
+            <ScatterLegend />
+          </div>
           <ScatterChart points={scatter} label={`Risco contra retorno dos ativos da carteira, ${PERIOD_LONG[period]}`} />
           <button
             type="button"
@@ -155,7 +158,10 @@ export function Portfolio({ candidates, defaults, benchmark, initial }: Props) {
         </div>
         <div className="mt-3">{chart(150)}</div>
         {legend}
-        <div className="mt-5 text-[13px] font-semibold text-muted">Volatilidade x retorno {PERIOD_LONG[period]}</div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <div className="text-[13px] font-semibold text-muted">Risco x retorno {PERIOD_LONG[period]}</div>
+          <ScatterLegend />
+        </div>
         <ScatterChart points={scatter} label={`Risco contra retorno dos ativos da carteira, ${PERIOD_LONG[period]}`} />
       </Sheet>
 

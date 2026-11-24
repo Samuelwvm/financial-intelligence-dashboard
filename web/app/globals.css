@@ -87,6 +87,8 @@
 
 html {
   line-height: normal;
+  /* Nunca rolar a página na horizontal (carrosséis têm rolagem própria). */
+  overflow-x: clip;
   background: var(--bg);
   -webkit-text-size-adjust: 100%;
 }
@@ -160,8 +162,13 @@ body {
   }
 }
 
+/* top/left fixos: sem eles, o texto só para leitor de tela (position:absolute) fica na
+   posição "estática" e, sem ancestral posicionado, escapa da rolagem dos carrosséis,
+   alargando a página (aparecia com movimento reduzido). */
 .sr-only {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 1px;
   height: 1px;
   padding: 0;

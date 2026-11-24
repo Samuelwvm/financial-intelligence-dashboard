@@ -43,6 +43,17 @@ Formato: **decisão** · motivo · alternativas consideradas.
 30. **Risco x retorno refeito:** eixos com porcentagens e grade, linha do 0% destacada, o Ibovespa como ponto vazado de referência, rótulos sem colisão, detalhe ao tocar ou passar o mouse, legenda (alta/queda/referência) e uma frase explicando a leitura. Largura medida para o texto não distorcer.
 31. **Deploy a cada merge na `main`:** o workflow também roda em `push` para a `main` (só reexporta e publica, sem coletar). Antes, um código mesclado só ia ao ar no próximo horário agendado.
 
+32. **Interação por tamanho de tela (revisão de UX).** O mesmo gesto em todas as telas e o "1º toque pausa, 2º abre" eram padrões inventados e confusos:
+
+    | | Celular / tablet (< 1024 px) | Computador (≥ 1024 px) |
+    |---|---|---|
+    | Em linguagem simples | arrastar para o lado; pontinhos só indicam; dica "Arraste para o lado…" | setas ‹ › (pontinhos só indicam); mouse em cima pausa; arrastar com o mouse não faz nada |
+    | Carrossel de ativos | anda sozinho; o dedo pausa 20 s e arrasta (rolagem nativa); **toque abre direto** | anda sozinho; mouse em cima pausa; **clique abre direto**; setas ‹ › avançam dois cards (e pausam 20 s) |
+
+    Nos dois tamanhos: setas do teclado nas dicas; o carrossel de ativos mantém um botão de pausa sem prazo (conteúdo que se move por mais de 5 s precisa de controle — WCAG 2.2.2; no celular não existe "mouse em cima"); movimento reduzido = nada anda sozinho. Um arraste não abre o ativo por engano.
+33. **Risco x retorno:** a legenda (em alta / em queda / Ibovespa) fica na linha do título; a frase de leitura fica abaixo do gráfico, separada por uma linha, com respiro antes do botão "Editar ativos da carteira". O gráfico de desempenho ao lado passou para 240px para equilibrar a altura dos dois cards.
+34. **Textos só para leitor de tela (`.sr-only`) com `top: 0; left: 0`.** Sem coordenadas, um elemento `position: absolute` fica na posição "estática" e, sem ancestral posicionado, escapa da rolagem dos carrosséis — com movimento reduzido a página ganhava ~250px de largura invisíveis. Teste e2e dedicado.
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.
