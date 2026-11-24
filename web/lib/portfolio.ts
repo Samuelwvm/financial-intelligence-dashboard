@@ -77,3 +77,25 @@ export function onPortfolioChange(cb: () => void) {
     window.removeEventListener("storage", handler);
   };
 }
+
+/** Rebaseia uma curva para valer 100 em `start` (o 1º dia da carteira) e corta o que vem antes,
+ * para que carteira, Ibovespa, CDI e IPCA partam exatamente do mesmo ponto. */
+export function rebaseAt(points: Point[], start: string | undefined): Point[] {
+  if (!start || points.length === 0) return points;
+  let base: number | null = null;
+  for (const [d, v] of points) {
+    if (d <= start) base = v;
+    else break;
+  }
+  const from = points.findIndex(([d]) => d >= start);
+  if (from < 0) return [];
+  const b = base ?? points[from][1];
+  const out = points.slice(from).map(([d, v]) => [d, (v / b) * 100] as Point);
+  if (out[0][0] !== start) out.unshift([start, (base ?? points[from][1]) / b * 100]);
+  return out;
+}
+
+export const REFERENCES = [
+  { id: "cdi", label: "CDI", tone: "cdi", dashed: "2 3" },
+  { id: "ipca", label: "IPCA", tone: "ipca", dashed: "8 3 2 3" },
+] as const;

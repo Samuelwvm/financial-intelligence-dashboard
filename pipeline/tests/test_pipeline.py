@@ -51,6 +51,12 @@ def test_clean_rows_drops_nan_nonpositive_and_future():
     assert clean_rows(rows, date(2026, 1, 10)) == [("2026-01-02", 10.0)]
 
 
+def test_clean_rows_keeps_negative_indicator_values():
+    # deflação (IPCA negativo) e taxa zero são dados válidos para indicadores
+    rows = [("2026-08-01", -0.32), ("2026-09-01", 0.0), ("2026-10-01", math.nan)]
+    assert clean_rows(rows, date(2026, 11, 1), allow_nonpositive=True) == [("2026-08-01", -0.32), ("2026-09-01", 0.0)]
+
+
 def test_retry_recovers_then_gives_up():
     calls = {"n": 0}
 

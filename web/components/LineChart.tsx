@@ -8,13 +8,13 @@ export type ChartSeries = {
   id: string;
   label: string;
   points: [string, number][];
-  tone: "pos" | "fg" | "accent";
-  dashed?: boolean;
+  tone: "pos" | "fg" | "accent" | "cdi" | "ipca";
+  dashed?: boolean | string; // true = "6 4"; string = padrão próprio (ex.: "2 3")
   area?: boolean;
   width?: number;
 };
 
-const STROKE = { pos: "var(--pos)", fg: "var(--fg)", accent: "var(--hl-accent)" } as const;
+const STROKE = { pos: "var(--pos)", fg: "var(--fg)", accent: "var(--hl-accent)", cdi: "var(--series-cdi)", ipca: "var(--series-ipca)" } as const;
 
 const useIsoLayoutEffect = typeof window === "undefined" ? () => {} : useLayoutEffect;
 
@@ -154,7 +154,7 @@ export function LineChart({
             strokeWidth={s.width ?? 2.5}
             strokeLinejoin="round"
             strokeLinecap="round"
-            strokeDasharray={s.dashed ? "6 4" : undefined}
+            strokeDasharray={s.dashed === true ? "6 4" : s.dashed || undefined}
             initial={s.dashed ? false : { pathLength: 0 }}
             animate={s.dashed ? undefined : { pathLength: 1 }}
             transition={{ duration: reduce ? 0 : 0.8, ease: [0.2, 0.7, 0.2, 1] }}

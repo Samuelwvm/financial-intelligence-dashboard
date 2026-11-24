@@ -113,4 +113,6 @@ def test_export_contract_shape(tmp_path):
     for period in ("1d", "7d", "30d", "90d", "1y"):
         p = docs[f"portfolio/{period}.json"]
         assert all(len(v) == len(p["dates"]) for v in p["series"].values())
+        for ref in s["portfolio"]["references"]:
+            assert p["series"][ref][0] == 100.0  # base 100 no 1º dia do período
     assert len(docs["glossary.json"]["terms"]) >= 20

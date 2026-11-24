@@ -15,7 +15,7 @@ from pathlib import Path
 from . import db
 from .assets import ASSETS, BY_SYMBOL, DEFAULT_PORTFOLIO, INDICATORS, LOGO_DOMAINS, PORTFOLIO_CANDIDATES, PULSE
 from .glossary import CATEGORIES, GLOSSARY
-from .metrics import PERIODS, align_ffill, base100, daily_change, period_stats
+from .metrics import PERIODS, align_ffill, base100, cdi_index, daily_change, ipca_index, period_stats
 
 SCHEMA_VERSION = 1
 OUT_DIR = db.ROOT / "web" / "public" / "data"
@@ -76,6 +76,8 @@ def build(conn: sqlite3.Connection, generated_at: datetime | None = None) -> dic
             "candidates": [BY_SYMBOL[s].slug for s in PORTFOLIO_CANDIDATES],
             "default": [BY_SYMBOL[s].slug for s in DEFAULT_PORTFOLIO],
             "benchmark": BY_SYMBOL[BENCHMARK].slug,
+            # Séries extras em portfolio/<período>.json (base 100): renda fixa e inflação.
+            "references": ["cdi", "ipca"],
         },
         "macro": _macro(conn),
         "assets": summaries,
@@ -90,14 +92,16 @@ def build(conn: sqlite3.Connection, generated_at: datetime | None = None) -> dic
         docs[f"series/{a.slug}.json"] = {"slug": a.slug, "periods": periods}
 
     members = list(PORTFOLIO_CANDIDATES) + [BENCHMARK]
+    cdi = db.price_series(conn, "CDI")
+    ipca = db.price_series(conn, "IPCA")
     for period in PERIODS:
         cols = {BY_SYMBOL[s].slug: base100(period_stats(series_by_symbol[s], period).points) for s in members}
         dates, aligned = align_ffill(cols)
-        docs[f"portfolio/{period}.json"] = {
-            "period": period,
-            "dates": dates,
-            "series": {k: [None if v is None else round(v, 3) for v in vals] for k, vals in aligned.items()},
-        }
+        series = {k: [None if v is None else round(v, 3) for v in vals] for k, vals in aligned.items()}
+        # Referências: quanto teria rendido o CDI e quanto subiu a inflação no mesmo período.
+        series["cdi"] = [round(v, 4) for v in cdi_index(dates, cdi)]
+        series["ipca"] = [round(v, 4) for v in ipca_index(dates, ipca)]
+        docs[f"portfolio/{period}.json"] = {"period": period, "dates": dates, "series": series}
 
     docs["glossary.json"] = {"categories": CATEGORIES, "terms": GLOSSARY}
     return docs
