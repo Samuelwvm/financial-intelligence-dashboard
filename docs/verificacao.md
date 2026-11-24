@@ -34,6 +34,8 @@ Ajustes feitos depois da comparação: altura de linha (`normal`), margem do car
 
 ## 4. Lighthouse (mobile, CPU 4× e rede lenta simulada)
 
+Depois de logos, rodapé e dicas rotativas: Painel 94, Brasil 97, Cripto 99, Ativo (PETR4) 99 de performance; 100 em acessibilidade, boas práticas e SEO; CLS 0 em todas. A medição anterior está abaixo.
+
 | Página | Performance | Acessibilidade | Boas práticas | SEO |
 |---|---|---|---|---|
 | Painel | 98 | 100 | 100 | 100 |

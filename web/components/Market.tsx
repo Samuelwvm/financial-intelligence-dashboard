@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { formatDate, formatMonthYear, formatPct, formatPrice } from "@/lib/format";
 import type { AssetSummary, Summary } from "@/lib/schema";
-import { Card, Chip } from "./ui";
+import { AssetLogo } from "./AssetLogo";
+import { Chip } from "./ui";
 
 /** Pulso do mercado: carrossel de cards de 136px (mobile) / grade de 5 (web). */
 export function Pulse({ assets, label = "Pulso do mercado" }: { assets: AssetSummary[]; label?: string }) {
@@ -61,34 +62,19 @@ export function MacroCards({ macro, start = 0 }: { macro: Summary["macro"]; star
   );
 }
 
-export const PLAIN_SELIC = "Quando a SELIC sobe, a renda fixa tende a render mais e o crédito fica mais caro.";
-
-/** "Em linguagem simples": card branco no mobile, card de destaque na web (como no mockup). */
-export function PlainLanguage({ i = 0, variant, mobileExtra }: { i?: number; variant: "mobile" | "web"; mobileExtra?: string }) {
-  if (variant === "mobile") {
-    return (
-      <Card i={i} className="mx-5 lg:hidden" aria-labelledby="simples-m">
-        <h2 id="simples-m" className="text-[13px] font-bold text-pos">
-          EM LINGUAGEM SIMPLES
-        </h2>
-        <p className="mt-1.5 text-[15px] leading-[1.45]">
-          {PLAIN_SELIC} {mobileExtra}
-        </p>
-      </Card>
-    );
-  }
-  return (
-    <section
-      style={{ "--i": i } as React.CSSProperties}
-      className="rise lift hidden flex-[2_1_320px] rounded-[18px] bg-hl p-5 text-hl-fg lg:block"
-      aria-labelledby="simples-w"
-    >
-      <h2 id="simples-w" className="text-[12px] font-bold tracking-[0.04em] text-hl-accent">
-        EM LINGUAGEM SIMPLES
-      </h2>
-      <p className="mt-2 text-[16px] leading-normal">{PLAIN_SELIC}</p>
-    </section>
-  );
+/** Dicas do card "Em linguagem simples", com os números do dia (dados oficiais do BCB). */
+export function plainTips(macro: Summary["macro"], variant: "mobile" | "web"): string[] {
+  const touch = variant === "mobile" ? " Toque num número para ver o que ele significa." : "";
+  return [
+    `Quando a SELIC sobe, a renda fixa tende a render mais e o crédito fica mais caro.${touch}`,
+    `A SELIC está em ${formatPct(macro.selic.value)} ao ano. É a taxa básica que serve de referência para os juros do país.`,
+    `O CDI anda colado na SELIC e hoje está em ${formatPct(macro.cdi.value)} ao ano. É a referência da maioria dos CDBs.`,
+    `Com a inflação (IPCA) em ${formatPct(macro.ipca12m.value)} em 12 meses, um investimento precisa render mais que isso para não perder poder de compra.`,
+    "Volatilidade alta quer dizer preço que sobe e desce muito. Não é bom nem ruim: é a medida do risco.",
+    "Base 100 coloca todos os ativos no mesmo ponto de partida, para comparar quem subiu mais no período.",
+    "Dólar em alta encarece importados e viagens, mas ajuda as empresas que exportam.",
+    "Diversificar entre ativos diferentes reduz o estrago que a queda de um só pode fazer na carteira.",
+  ];
 }
 
 /** Linha de ativo para as listas de Brasil e Mundo. */
@@ -100,12 +86,7 @@ export function AssetRowLink({ a, ret, digits, i }: { a: AssetSummary; ret: numb
         style={{ "--i": i } as React.CSSProperties}
         className="rise lift flex min-h-16 items-center gap-3 rounded-2xl border border-line bg-card px-4 py-3 lg:rounded-[18px]"
       >
-        <span
-          aria-hidden="true"
-          className="flex size-10 shrink-0 items-center justify-center rounded-full bg-pos-soft font-display text-[13px] font-bold text-pos"
-        >
-          {a.ticker.replace(/[^A-Z0-9]/gi, "").slice(0, 2)}
-        </span>
+        <AssetLogo logo={a.logo} ticker={a.ticker} />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[15px] font-bold">{a.name}</span>
           <span className="block text-[12px] text-muted">{a.ticker}</span>

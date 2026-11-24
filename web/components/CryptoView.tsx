@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { PERIOD_LONG, formatPlain, formatPrice, formatSignedPct } from "@/lib/format";
 import type { AssetSeries, AssetSummary, Period } from "@/lib/schema";
+import { AssetLogo } from "./AssetLogo";
 import { LineChart } from "./LineChart";
 import { PeriodPicker } from "./PeriodPicker";
 import { Card, Chip, Stat } from "./ui";
@@ -33,7 +34,8 @@ export function CryptoView({ btc, eth }: { btc: Coin; eth: Coin }) {
           return (
             <Card key={a.slug} i={i + 1} className="mx-5 lg:mx-0" aria-labelledby={`c-${a.slug}`}>
               <div className="flex items-center justify-between gap-3">
-                <div>
+                <AssetLogo logo={a.logo} ticker={a.ticker} />
+                <div className="mr-auto">
                   <h2 id={`c-${a.slug}`} className="text-[16px] font-bold">
                     <Link href={`/ativo/${a.slug}/`} className="hover:underline">
                       {a.name}

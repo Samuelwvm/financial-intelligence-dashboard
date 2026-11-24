@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AssetLogo } from "@/components/AssetLogo";
 import { AssetView } from "@/components/AssetView";
 import { PageHeader } from "@/components/ui";
 import { getAsset, getSeries, getSummary } from "@/lib/data";
@@ -28,7 +29,12 @@ export default async function AtivoPage({ params }: Props) {
   const portfolio = s.portfolio.candidates.includes(slug) ? { candidates: s.portfolio.candidates, defaults: s.portfolio.default } : null;
   return (
     <>
-      <PageHeader title={asset.name} subtitle={`${asset.market} · dados de ${formatDate(asset.lastDate)}`} back={BACK[asset.group]} />
+      <PageHeader
+        title={asset.name}
+        subtitle={`${asset.market} · dados de ${formatDate(asset.lastDate)}`}
+        back={BACK[asset.group]}
+        icon={asset.logoDomain ? <AssetLogo logo={asset.logo} ticker={asset.ticker} size={32} /> : undefined}
+      />
       <AssetView asset={asset} series={series} portfolio={portfolio} />
     </>
   );

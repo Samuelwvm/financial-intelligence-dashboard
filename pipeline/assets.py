@@ -95,9 +95,24 @@ PORTFOLIO_CANDIDATES: tuple[str, ...] = (
 # A V1 usava os 6 primeiros como seleção inicial.
 DEFAULT_PORTFOLIO: tuple[str, ...] = PORTFOLIO_CANDIDATES[:6]
 
+# Domínio usado pelo CDN de logos da AllInvestView (cdn.tickerlogos.com/<domínio>).
+# Sem entrada (índices, câmbio, commodities) ou com logo ausente no CDN → iniciais.
+# Atribuição obrigatória "Logos by AllInvestView" no rodapé do site.
+LOGO_DOMAINS: dict[str, str] = {
+    "ITUB4.SA": "itau.com.br", "PETR4.SA": "petrobras.com.br", "VALE3.SA": "vale.com",
+    "BPAC11.SA": "btgpactual.com", "ABEV3.SA": "ambev.com.br", "WEGE3.SA": "weg.net",
+    "BBDC4.SA": "bradesco.com.br", "BBAS3.SA": "bb.com.br", "SANB11.SA": "santander.com.br",
+    "JBSS32.SA": "jbs.com.br",
+    "AAPL": "apple.com", "GOOGL": "google.com", "MSFT": "microsoft.com", "AMZN": "amazon.com",
+    "NVDA": "nvidia.com", "TSLA": "tesla.com", "META": "meta.com", "NU": "nubank.com.br",
+    "AMD": "amd.com", "2222.SR": "aramco.com",
+    "BTC-USD": "bitcoin.org", "ETH-USD": "ethereum.org",
+}
+
 BY_SYMBOL = {a.symbol: a for a in ASSETS}
 BY_SLUG = {a.slug: a for a in ASSETS}
 
 assert len(BY_SYMBOL) == len(ASSETS), "símbolo duplicado no catálogo"
 assert len(BY_SLUG) == len(ASSETS), "slug duplicado no catálogo"
 assert all(s in BY_SYMBOL for s in PULSE + PORTFOLIO_CANDIDATES)
+assert all(s in BY_SYMBOL for s in LOGO_DOMAINS)
