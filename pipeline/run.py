@@ -18,7 +18,7 @@ import time
 
 import pandas as pd
 
-from . import db, export, health
+from . import db, export, health, ibge
 from .assets import ASSETS, INDICATORS
 from .collectors import CollectResult, clean_rows, fetch_bcb, fetch_yahoo, utc_today, window_start, with_retry
 
@@ -46,12 +46,21 @@ def collect(conn, today) -> CollectResult:
         except Exception as exc:  # noqa: BLE001
             result.failed[ind.symbol] = str(exc)
 
-    total = len(ASSETS) + len(INDICATORS)
+    ibge_rows: list[tuple[str, str, float]] = []
+    for name, fn in (("IBGE:IPCA-grupos", ibge.fetch_ipca), ("IBGE:desocupacao", ibge.fetch_unemployment)):
+        try:
+            ibge_rows += with_retry(fn, name)
+        except Exception as exc:  # noqa: BLE001
+            result.failed[name] = str(exc)
+
+    total = len(ASSETS) + len(INDICATORS) + 2
     if len(result.failed) > total / 2:
         raise RuntimeError(f"{len(result.failed)}/{total} coletas falharam; nada foi gravado: {result.failed}")
 
     for symbol, rows in fetched.items():
         result.ok[symbol] = db.upsert_prices(conn, symbol, rows)
+    if ibge_rows:
+        result.ok["IBGE"] = ibge.upsert(conn, ibge_rows)
     return result
 
 
@@ -112,9 +121,10 @@ def main(argv: list[str] | None = None) -> int:
         recalc_variations(conn)
         conn.execute("ANALYZE")
         last = db.last_dates(conn)
+        last_ibge = ibge.last_dates(conn)
     print(f"Limpeza: {removed} registro(s) com mais de {KEEP_DAYS} dias removido(s)")
 
-    problems = health.check(last, today)
+    problems = health.check(last, today) + health.check_ibge(last_ibge, today)
     status = "Sucesso"
     if problems:
         print("Saúde do pipeline: PROBLEMAS", file=sys.stderr)

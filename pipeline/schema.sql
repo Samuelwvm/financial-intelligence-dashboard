@@ -27,3 +27,13 @@ CREATE TABLE IF NOT EXISTS update_logs (
     status TEXT NOT NULL,
     details TEXT
 );
+
+-- Séries do IBGE (SIDRA): IPCA por grupo (mensal) e taxa de desemprego (trimestre móvel).
+-- series = ex.: 'ipca:7170:mensal', 'ipca:7170:peso', 'ipca:7170:12m', 'desocupacao'.
+-- date = 1º dia do mês de referência (no trimestre móvel, o último mês do trimestre).
+CREATE TABLE IF NOT EXISTS ibge_series (
+    date TEXT NOT NULL,
+    series TEXT NOT NULL,
+    value REAL NOT NULL,
+    PRIMARY KEY (series, date)
+);

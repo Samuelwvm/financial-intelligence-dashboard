@@ -71,7 +71,7 @@ ter–sáb 01:17 UTC (seg–sex 22h17 em Brasília)
        6. saúde: falha (e o GitHub te manda e-mail) se algum ativo ficou sem dado novo
 ```
 
-Além do horário agendado, **todo merge na `main` publica o site na hora** (o workflow roda em `push`, só reexportando os dados, sem coletar).
+Além do horário agendado, **todo merge na `main` publica o site na hora** (o workflow também roda em `push` e coleta os dados, o que é idempotente e leva ~30 s).
 
 Nenhum commit é criado por esse ciclo. O histórico do repositório fica só com mudanças de código.
 

@@ -67,3 +67,22 @@ export const PERIOD_LONG: Record<string, string> = {
   "90d": "no período de 90 dias",
   "1y": "no período de 1 ano",
 };
+
+const monthShort = new Intl.DateTimeFormat("pt-BR", { month: "short", year: "2-digit", timeZone: "UTC" });
+/** "set/26" */
+export const formatMonthShort = (iso: string) => monthShort.format(toDate(iso)).replace(". de ", "/").replace(".", "").replace(" de ", "/");
+
+/** Trimestre móvel terminado no mês de `iso`: "jul–set/2026". */
+export function formatRollingQuarter(iso: string): string {
+  const end = toDate(iso);
+  const start = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth() - 2, 1));
+  const m = (d: Date) => new Intl.DateTimeFormat("pt-BR", { month: "short", timeZone: "UTC" }).format(d).replace(".", "");
+  return `${m(start)}–${m(end)}/${end.getUTCFullYear()}`;
+}
+
+/** Diferença em pontos percentuais com sinal: "−0,4 p.p." */
+export function formatPp(value: number, digits = 1): string {
+  const v = Number(value.toFixed(digits));
+  const sign = v > 0 ? "+" : v < 0 ? "−" : "";
+  return `${sign}${nf(digits, digits).format(Math.abs(v))} p.p.`;
+}

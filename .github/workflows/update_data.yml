@@ -5,7 +5,8 @@ name: Atualização diária e deploy
 on:
   schedule:
     - cron: "17 1 * * 2-6"
-  # Cada merge na main publica o código novo na hora (sem coletar: usa o banco da release).
+  # Cada merge na main publica o código novo na hora (coleta também: é idempotente, ~30 s,
+  # e garante dados de fontes novas — como o IBGE — já no primeiro deploy).
   push:
     branches: [main]
     paths: ["web/**", "pipeline/**", ".github/workflows/update_data.yml"]
@@ -63,7 +64,7 @@ jobs:
 
       - name: Pipeline (coleta com retry, limpeza, métricas, export JSON)
         run: |
-          if [ "${{ inputs.skip_collect }}" = "true" ] || [ "${{ github.event_name }}" = "push" ]; then
+          if [ "${{ inputs.skip_collect }}" = "true" ]; then
             python -m pipeline.run --skip-collect --no-health
           else
             python -m pipeline.run --no-health

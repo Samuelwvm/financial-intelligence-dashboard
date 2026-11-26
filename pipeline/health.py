@@ -61,6 +61,24 @@ def check(last_dates: dict[str, str], today: date) -> list[str]:
     return problems
 
 
+# IBGE: o IPCA do mês M sai por volta do dia 10 de M+1; o trimestre móvel do
+# desemprego (último mês M) sai perto do fim de M+1 — daí as folgas maiores.
+MAX_LAG_IBGE_DAYS = {"ipca:7169:mensal": 80, "desocupacao": 120}
+
+
+def check_ibge(last_dates: dict[str, str], today: date) -> list[str]:
+    problems = []
+    for series, limit in MAX_LAG_IBGE_DAYS.items():
+        d = last_dates.get(series)
+        if d is None:
+            problems.append(f"IBGE {series}: sem nenhum dado")
+            continue
+        n = (today - date.fromisoformat(d)).days
+        if n > limit:
+            problems.append(f"IBGE {series}: último dado em {d} ({n} dias; limite {limit})")
+    return problems
+
+
 def main() -> int:
     """`python -m pipeline.health`: falha (código 1) se houver dado desatualizado."""
     import sys
@@ -70,8 +88,11 @@ def main() -> int:
 
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8")
+    from . import ibge
+
     with db.connect() as conn:
-        problems = check(db.last_dates(conn), utc_today())
+        db.initialize(conn)
+        problems = check(db.last_dates(conn), utc_today()) + check_ibge(ibge.last_dates(conn), utc_today())
     if problems:
         print("Saúde do pipeline: dados desatualizados", file=sys.stderr)
         for p in problems:

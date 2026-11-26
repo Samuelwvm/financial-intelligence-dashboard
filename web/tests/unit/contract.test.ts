@@ -3,7 +3,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { glossarySchema, portfolioSchema, PERIODS, seriesSchema, summarySchema } from "@/lib/schema";
+import { glossarySchema, ibgeSchema, portfolioSchema, PERIODS, seriesSchema, summarySchema } from "@/lib/schema";
 
 const DIR = path.join(__dirname, "..", "..", "public", "data");
 const has = existsSync(path.join(DIR, "summary.json"));
@@ -20,6 +20,12 @@ describe.skipIf(!has)("JSON gerados pelo pipeline", () => {
     for (const f of readdirSync(path.join(DIR, "series"))) seriesSchema.parse(read(`series/${f}`));
     for (const p of PERIODS) portfolioSchema.parse(read(`portfolio/${p}.json`));
     expect(glossarySchema.parse(read("glossary.json")).terms.length).toBeGreaterThanOrEqual(20);
+  });
+  it("ibge.json: 9 grupos do IPCA e impactos que somam o índice geral do mês", () => {
+    const g = ibgeSchema.parse(read("ibge.json"));
+    const soma = g.ipca.groups.reduce((a, x) => a + x.impact, 0);
+    expect(soma).toBeCloseTo(g.ipca.general.monthly, 1); // convenção do IBGE (arredondamentos)
+    expect(g.unemployment.series.at(-1)![0]).toBe(g.unemployment.date);
   });
   it("série do período começa no preço-base", () => {
     const s = seriesSchema.parse(read("series/petr4.json"));

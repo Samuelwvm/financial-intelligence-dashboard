@@ -12,7 +12,7 @@ import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import db
+from . import db, ibge
 from .assets import ASSETS, BY_SYMBOL, DEFAULT_PORTFOLIO, INDICATORS, LOGO_DOMAINS, PORTFOLIO_CANDIDATES, PULSE
 from .glossary import CATEGORIES, GLOSSARY
 from .metrics import PERIODS, align_ffill, base100, daily_change, period_stats  # cdi_index, ipca_index: feature desativada
@@ -107,6 +107,7 @@ def build(conn: sqlite3.Connection, generated_at: datetime | None = None) -> dic
         docs[f"portfolio/{period}.json"] = {"period": period, "dates": dates, "series": series}
 
     docs["glossary.json"] = {"categories": CATEGORIES, "terms": GLOSSARY}
+    docs["ibge.json"] = ibge.build_export(conn)
     return docs
 
 

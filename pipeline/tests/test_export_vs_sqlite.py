@@ -80,6 +80,8 @@ def make_synthetic(path):
             db.upsert_prices(conn, a.symbol, series)
         for i in INDICATORS:
             db.upsert_prices(conn, i.symbol, [("2026-10-01", 4.5), ("2026-11-20", 13.75)])
+        from pipeline.tests.test_ibge import fill
+        fill(conn)
 
 
 def test_export_matches_independent_calc_synthetic(tmp_path):

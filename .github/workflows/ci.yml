@@ -41,7 +41,7 @@ jobs:
           cache-dependency-path: pipeline/requirements.txt
       - run: pip install -r pipeline/requirements.txt
 
-      # Dados reais do último dia (sem coletar): restaura o banco e só exporta.
+      # Dados reais: restaura o banco e coleta (idempotente; garante fontes novas, como o IBGE).
       - name: Dados para o build
         env:
           GH_TOKEN: ${{ github.token }}
@@ -49,7 +49,7 @@ jobs:
           mkdir -p data
           gh release download data-latest --pattern finance.db --dir data --clobber \
             || { git fetch --depth=1 origin deploy && git show FETCH_HEAD:data/finance.db > data/finance.db; }
-          python -m pipeline.run --skip-collect --no-health
+          python -m pipeline.run --no-health
 
       - uses: actions/setup-node@v7
         with:

@@ -249,3 +249,16 @@ test("em linguagem simples: web usa setas e pontinhos; celular arrasta", async (
 //   await expect(cdi).toHaveAttribute("aria-pressed", "false");
 //   expect(await lines()).toBe(3);
 // });
+
+test("Brasil: inflação por grupo (IBGE) alterna mês/12 meses e desemprego com fonte", async ({ page }) => {
+  await page.goto("/brasil/");
+  const ipca = page.locator('section[aria-labelledby="ipca-grupos"]');
+  await expect(ipca).toContainText("Fonte: IBGE");
+  await expect(ipca.getByRole("listitem")).toHaveCount(9);
+  await expect(ipca).toContainText("Em 12 meses, o que mais subiu foi");
+  await ipca.getByRole("button", { name: "No mês" }).click();
+  await expect(ipca).toContainText("mais pressionou o IPCA do mês");
+  const des = page.locator('section[aria-labelledby="desemprego"]');
+  await expect(des).toContainText("PNAD Contínua");
+  await expect(des.getByRole("img", { name: /desemprego/i })).toBeVisible();
+});
