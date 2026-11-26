@@ -90,6 +90,12 @@ Formato: **decisão** · motivo · alternativas consideradas.
 40. **Desemprego com filtro de período** (2 anos, 5 anos ou desde 2012): o SIDRA tem a série desde 2012 (175 trimestres móveis), toda exportada; a tela recorta. Em "Desde 2012", uma frase mostra o maior e o menor valor da série.
 41. **Inflação × meta (tela Brasil, abaixo do Desemprego):** IPCA 12 meses (BCB) contra a meta contínua do **CMN**, 3,0% com tolerância de 1,5 ponto (faixa de 1,5% a 4,5%), desenhada como faixa no gráfico. A frase diz se o dado está "acima do teto", "abaixo do piso" ou "dentro do intervalo". A meta é uma constante documentada em `pipeline/macro.py` e precisa ser revista se o CMN mudar.
 
+42. **Revisão de UI/UX da seção "Economia brasileira":**
+    - **Ordem resumo → detalhe:** na web, *Inflação × meta* e *Desemprego* lado a lado (mesma altura, sem vazio) e *Inflação por grupo* na largura toda, com a lista em duas colunas. No celular: meta, por grupo (os dois de inflação juntos) e desemprego.
+    - **Inflação × meta passou a dizer algo além da cor:** quantos meses seguidos o IPCA está fora (ou dentro) do intervalo e a regra oficial, pelo art. 6º do Decreto 12.079/2024: 6 meses seguidos fora do intervalo obrigam o Banco Central a publicar uma carta aberta (aconteceu em jul/2025). A contagem é neutra ("2 de 6 meses seguidos"), sem prever se vai acontecer.
+    - **Gráficos legíveis sem legenda em texto:** eixo com valores (Desemprego, Inflação × meta, Juro real) e linhas de referência rotuladas numa margem à direita (teto, meta, piso), para que o rótulo nunca cruze a linha do dado.
+43. **Teste do carrossel estável:** o teste esperava 1,5 s e media uma vez; sob carga o navegador desenha menos quadros e ele falhava de vez em quando. Agora espera o movimento (até 8 s) com o mouse longe do carrossel. Passou 40 de 40 vezes com 8 testes em paralelo.
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.

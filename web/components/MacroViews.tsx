@@ -56,6 +56,7 @@ export function RealRateCard({ data, i = 0 }: { data: Macro["realRate"]; i?: num
           height={150}
           heightClass="h-[150px] lg:h-[200px]"
           baseline={0}
+          yAxis={(x) => formatPct(x, 0)}
           label="Juro real do Brasil e dos EUA nos últimos 24 meses"
           description={`Brasil de ${pct2(brPts[0][1])} para ${pct2(br.real)}; EUA de ${pct2(usPts[0][1])} para ${pct2(us.real)}.`}
           formatValue={pct2}
@@ -79,42 +80,74 @@ export function RealRateCard({ data, i = 0 }: { data: Macro["realRate"]; i?: num
   );
 }
 
-/** Tela Brasil: IPCA 12 meses contra a meta contínua do CMN (faixa de tolerância). */
-export function InflationTargetCard({ data, i = 0 }: { data: Macro["inflationTarget"]; i?: number }) {
+/**
+ * Tela Brasil: IPCA 12 meses contra a meta contínua do CMN (3% ± 1,5 ponto).
+ * Mostra quantos meses seguidos o índice está fora/dentro do intervalo e a regra oficial:
+ * pelo art. 6º do Decreto 12.079/2024, 6 meses seguidos fora do intervalo obrigam o
+ * Banco Central a publicar uma carta aberta. Só contagem do que já aconteceu — sem previsão.
+ */
+export function InflationTargetCard({ data, i = 0, className = "" }: { data: Macro["inflationTarget"]; i?: number; className?: string }) {
   const { center, lower, upper, latest } = data;
   const pts = data.series as [string, number][];
   const v = latest.value;
+  const outside = (x: number) => x > upper || x < lower;
+  let streak = 0;
+  for (let k = pts.length - 1; k >= 0 && outside(pts[k][1]) === outside(v); k--) streak++;
   const status =
     v > upper
       ? { text: `acima do teto da meta (${formatPct(upper, 1)})`, cls: "text-neg" }
       : v < lower
         ? { text: `abaixo do piso da meta (${formatPct(lower, 1)})`, cls: "text-neg" }
-        : { text: `dentro do intervalo da meta (${formatPct(lower, 1)} a ${formatPct(upper, 1)})`, cls: "text-pos" };
+        : { text: `dentro do intervalo da meta`, cls: "text-pos" };
+  const ordinal = `${streak}º mês seguido`;
+  const pctAxis = (x: number) => formatPct(x, Number.isInteger(x) ? 0 : 1);
   return (
-    <Card i={i} className="mx-5 lg:mx-0" aria-labelledby="meta-inflacao">
+    <Card i={i} className={`mx-5 lg:mx-0 ${className}`} aria-labelledby="meta-inflacao">
       <h3 id="meta-inflacao" className="text-[15px] font-bold">
         Inflação × meta
       </h3>
-      <p className="text-[12px] text-muted">IPCA em 12 meses · Fonte: Banco Central · meta: CMN</p>
+      <p className="text-[12px] text-muted">IPCA em 12 meses · {formatMonthYear(latest.month)} · Fonte: Banco Central · meta: CMN</p>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="num font-display text-[30px] font-semibold">{formatPct(v, 2)}</span>
         <span className={`text-[13px] font-semibold ${status.cls}`}>{status.text}</span>
       </div>
+      <p className="text-[13px] text-muted">
+        {outside(v) ? `${ordinal} fora do intervalo de ${formatPct(lower, 1)} a ${formatPct(upper, 1)}` : `${ordinal} dentro do intervalo de ${formatPct(lower, 1)} a ${formatPct(upper, 1)}`}
+      </p>
       <div className="mt-3">
         <LineChart
           series={[{ id: "ipca12", label: "IPCA 12 meses", points: pts, tone: "fg" }]}
-          height={120}
+          height={150}
+          heightClass="h-[150px] lg:h-[170px]"
           band={{ low: lower, high: upper }}
-          baseline={center}
-          label={`IPCA em 12 meses nos últimos ${pts.length} meses, com a faixa da meta`}
-          description={`De ${formatPct(pts[0][1], 2)} (${formatMonthShort(pts[0][0])}) para ${formatPct(v, 2)} (${formatMonthShort(latest.month)}). Meta ${formatPct(center, 1)}, tolerância de ${formatPct(lower, 1)} a ${formatPct(upper, 1)}.`}
+          refLines={[
+            { value: upper, label: `teto ${formatPct(upper, 1)}` },
+            { value: center, label: `meta ${formatPct(center, 0)}` },
+            { value: lower, label: `piso ${formatPct(lower, 1)}` },
+          ]}
+          yAxis={pctAxis}
+          label={`IPCA em 12 meses nos últimos ${pts.length} meses, com o intervalo da meta`}
+          description={`De ${formatPct(pts[0][1], 2)} (${formatMonthShort(pts[0][0])}) para ${formatPct(v, 2)} (${formatMonthShort(latest.month)}). Meta de ${formatPct(center, 1)}, intervalo de ${formatPct(lower, 1)} a ${formatPct(upper, 1)}.`}
           formatValue={(x) => formatPct(x, 2)}
           formatDate={formatMonthShort}
         />
       </div>
-      <p className="mt-2 text-[12px] leading-snug text-muted">
-        Faixa verde: tolerância da meta ({formatPct(lower, 1)} a {formatPct(upper, 1)}); linha tracejada: centro ({formatPct(center, 1)}).
-        Dado até {formatMonthYear(latest.month)}.
+      <p className="mt-3 border-t border-line pt-2.5 text-[12px] leading-snug text-muted">
+        {outside(v) && (
+          <>
+            {streak < 6 ? (
+              <>
+                <strong className="font-semibold text-fg">{streak} de 6 meses seguidos</strong> fora do intervalo.{" "}
+              </>
+            ) : (
+              <>
+                <strong className="font-semibold text-fg">{streak} meses seguidos</strong> fora do intervalo — já atingiu os 6 meses da regra.{" "}
+              </>
+            )}
+          </>
+        )}
+        Pela regra da meta contínua (Decreto 12.079/2024), quando o IPCA fica 6 meses seguidos fora do intervalo, o Banco
+        Central publica uma carta aberta explicando o descumprimento.
       </p>
     </Card>
   );

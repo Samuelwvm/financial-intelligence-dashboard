@@ -34,19 +34,18 @@ export function IbgeView({
         <p className="text-[12px] text-muted">Juros (Banco Central), inflação e desemprego (IBGE) · dados oficiais</p>
       </div>
       {children}
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-4">
-        <InflationByGroup data={data} i={start} />
-        {/* coluna da direita: desemprego e, embaixo, inflação × meta */}
-        <div className="flex flex-col gap-3 lg:gap-4">
-          <Unemployment data={data} i={start + 1} />
-          <InflationTargetCard data={target} i={start + 2} />
-        </div>
+      {/* Resumo → detalhe. Web: [meta | desemprego] em cima e "por grupo" na largura toda.
+          Celular: meta, por grupo (os dois de inflação juntos) e desemprego. */}
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
+        <InflationTargetCard data={target} i={start} className="order-1 lg:order-none lg:col-start-1 lg:row-start-1" />
+        <InflationByGroup data={data} i={start + 1} className="order-2 lg:order-none lg:col-span-2 lg:row-start-2" />
+        <Unemployment data={data} i={start + 2} className="order-3 lg:order-none lg:col-start-2 lg:row-start-1" />
       </div>
     </section>
   );
 }
 
-function InflationByGroup({ data, i }: { data: Ibge; i: number }) {
+function InflationByGroup({ data, i, className = "" }: { data: Ibge; i: number; className?: string }) {
   const [mode, setMode] = useState<Mode>("yoy");
   const reduce = useReducedMotion();
   const { month, general, groups } = data.ipca;
@@ -110,7 +109,7 @@ function InflationByGroup({ data, i }: { data: Ibge; i: number }) {
   };
 
   return (
-    <Card i={i} className="mx-5 lg:mx-0" aria-labelledby="ipca-grupos">
+    <Card i={i} className={`mx-5 lg:mx-0 ${className}`} aria-labelledby="ipca-grupos">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 id="ipca-grupos" className="text-[15px] font-bold">
@@ -143,7 +142,7 @@ function InflationByGroup({ data, i }: { data: Ibge; i: number }) {
         <span className="num font-display text-[18px] font-semibold">{formatSignedPct(general[mode], 2)}</span>
       </div>
 
-      <ul className="mt-3 flex flex-col gap-2.5" aria-label={`Variação por grupo, ${mode === "monthly" ? "no mês" : "em 12 meses"}`}>
+      <ul className="mt-3 flex flex-col gap-2.5 lg:grid lg:grid-flow-col lg:grid-cols-2 lg:grid-rows-5 lg:gap-x-10" aria-label={`Variação por grupo, ${mode === "monthly" ? "no mês" : "em 12 meses"}`}>
         {sorted.map((g) => (
           // Celular: nome e valor na 1ª linha, barra com a largura toda embaixo. Web: 3 colunas.
           <li
@@ -171,7 +170,7 @@ const UNEMP_PERIODS = [
   { id: "all", label: "Desde 2012", months: Infinity },
 ] as const;
 
-function Unemployment({ data, i }: { data: Ibge; i: number }) {
+function Unemployment({ data, i, className = "" }: { data: Ibge; i: number; className?: string }) {
   const u = data.unemployment;
   const [period, setPeriod] = useState<(typeof UNEMP_PERIODS)[number]["id"]>("2a");
   const diff = u.yearAgo === null ? null : u.value - u.yearAgo;
@@ -180,7 +179,7 @@ function Unemployment({ data, i }: { data: Ibge; i: number }) {
   const points = Number.isFinite(n) ? all.slice(-n) : all;
   const label = UNEMP_PERIODS.find((p) => p.id === period)!.label.toLowerCase();
   return (
-    <Card i={i} className="mx-5 lg:mx-0" aria-labelledby="desemprego">
+    <Card i={i} className={`mx-5 lg:mx-0 ${className}`} aria-labelledby="desemprego">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 id="desemprego" className="text-[15px] font-bold">
@@ -221,6 +220,7 @@ function Unemployment({ data, i }: { data: Ibge; i: number }) {
           description={`De ${formatPct(points[0][1], 1)} (${formatMonthShort(points[0][0])}) para ${formatPct(u.value, 1)} (${formatMonthShort(u.date)}).`}
           formatValue={(v) => formatPct(v, 1)}
           formatDate={formatMonthShort}
+          yAxis={(v) => formatPct(v, Number.isInteger(v) ? 0 : 1)}
         />
       </div>
       <p className="mt-2 text-[12px] leading-snug text-muted">
