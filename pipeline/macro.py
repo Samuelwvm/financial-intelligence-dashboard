@@ -14,6 +14,8 @@ import sqlite3
 from . import bis, db
 
 MONTHS = 24
+# Juro real no mundo: 10 anos, para o filtro 2 · 5 · 10 anos da tela Mundo.
+REAL_RATE_MONTHS = 120
 
 # Meta de inflação definida pelo Conselho Monetário Nacional (CMN): 3,0% ao ano,
 # com intervalo de tolerância de 1,5 ponto para mais ou para menos (meta contínua).
@@ -33,7 +35,7 @@ def shift_months(month: str, n: int) -> str:
     return f"{y:04d}-{m:02d}-01"
 
 
-def world_real_rates(policy: dict[str, dict[str, float]], cpi: dict[str, dict[str, float]], months: int = MONTHS) -> dict:
+def world_real_rates(policy: dict[str, dict[str, float]], cpi: dict[str, dict[str, float]], months: int = REAL_RATE_MONTHS) -> dict:
     """policy/cpi: {país: {mês: valor}}. Devolve o ranking no último mês comum e 24 meses por país."""
     countries = [c for c in bis.COUNTRIES if policy.get(c) and cpi.get(c)]
     if len(countries) < len(bis.COUNTRIES):

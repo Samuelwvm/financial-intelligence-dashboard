@@ -111,6 +111,10 @@ Formato: **decisão** · motivo · alternativas consideradas.
     - **Card 2, "Brasil × país":** lista suspensa "Comparar com" (EUA por padrão, países em ordem alfabética) no lugar dos chips, valores atuais dos dois e o gráfico de 24 meses. O título acompanha o país escolhido.
     - **Web: lado a lado,** com a mesma altura. **Celular: empilhados,** ranking primeiro (resumo → detalhe).
 
+47. **Brasil × país com filtro de período e menu no padrão do sistema.**
+    - **Período 2 · 5 · 10 anos**, no mesmo seletor do Desemprego (agora um componente só, `Segmented`). O site exporta 10 anos do BIS (`REAL_RATE_MONTHS = 120`) e a coleta busca 11 anos (folga para o atraso de ~1 mês). Conferido: os 10 países têm a série completa; só falta o CPI dos EUA de out/2025, já listado em "Sobre os dados". O recorte é pelo calendário, para os dois países cobrirem os mesmos meses.
+    - **Menu "Comparar com" próprio (`SelectMenu`)** no lugar do `<select>` nativo, cuja lista aberta não aceita estilo e destoava do sistema. Mesmos tokens (borda, raio 10/14, sombra `--shadow`, item ativo em `bg-soft`, escolhido em verde com ✓), no claro e no escuro. Acessível pelo padrão WAI-ARIA *select-only combobox*: setas, Home/End, Enter/Espaço, Esc, busca pela primeira letra (sem acento: "i" acha "Índia") e fecha ao clicar fora. O card com o menu aberto sobe de camada (`has-[[aria-expanded=true]]:z-30`) para a lista não ficar sob o card seguinte.
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.

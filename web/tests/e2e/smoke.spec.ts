@@ -278,10 +278,31 @@ test("Mundo: juro real no mundo em dois cards — ranking e comparação", async
   await expect(rank).toContainText("cerca de 1 mês depois das fontes nacionais");
 
   const cmp = page.locator('section[aria-labelledby="juro-real-comparar"]');
-  await expect(cmp.getByRole("img", { name: /Juro real do Brasil e de EUA/ })).toBeVisible();
-  await cmp.getByLabel("Comparar com").selectOption({ label: "México" });
+  await expect(cmp.getByRole("img", { name: /Juro real do Brasil e de EUA nos últimos 2 anos/ })).toBeVisible();
+  // Menu próprio (combobox + listbox): mouse e teclado
+  const menu = cmp.getByRole("button", { name: /Comparar com/ });
+  await menu.click();
+  await expect(menu).toHaveAttribute("aria-expanded", "true");
+  await cmp.getByRole("option", { name: "México" }).click();
+  await expect(menu).toHaveAttribute("aria-expanded", "false");
   await expect(cmp.getByRole("heading", { name: "Brasil × México" })).toBeVisible();
-  await expect(cmp.getByRole("img", { name: /Juro real do Brasil e de México/ })).toBeVisible();
+  await expect(cmp.getByRole("img", { name: /Juro real do Brasil e de México nos últimos 2 anos/ })).toBeVisible();
+  await menu.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(cmp.getByRole("listbox")).toBeFocused();
+  await page.keyboard.press("c"); // primeira letra: Chile
+  await page.keyboard.press("Enter");
+  await expect(cmp.getByRole("heading", { name: "Brasil × Chile" })).toBeVisible();
+  await expect(menu).toBeFocused();
+  await menu.click();
+  await page.keyboard.press("Escape");
+  await expect(cmp.getByRole("listbox")).toHaveCount(0);
+
+  // Filtro de período
+  await cmp.getByRole("button", { name: "10 anos" }).click();
+  await expect(cmp.getByRole("button", { name: "10 anos" })).toHaveAttribute("aria-pressed", "true");
+  await expect(cmp.getByRole("img", { name: /Juro real do Brasil e de Chile nos últimos 10 anos/ })).toBeVisible();
+  await expect(cmp).toContainText("Juro real nos últimos 10 anos");
   await expect(cmp).toContainText("um dos fatores que influenciam o dólar, não o único");
 });
 

@@ -37,7 +37,8 @@ def test_world_ranking_uses_latest_common_month_and_sorts():
     assert out["ranking"][0]["code"] == "BR"
     reals = [r["real"] for r in out["ranking"]]
     assert reals == sorted(reals, reverse=True)
-    assert len(out["series"]["US"]) == 24 and out["series"]["US"][-1][0] == "2026-08-01"
+    # janela de 10 anos: todos os 29 meses até ago/26 entram (set/26 fica de fora)
+    assert len(out["series"]["US"]) == 29 and out["series"]["US"][-1][0] == "2026-08-01"
 
 
 def test_world_requires_every_country():

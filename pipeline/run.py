@@ -57,8 +57,9 @@ def collect(conn, today) -> CollectResult:
         except Exception as exc:  # noqa: BLE001
             result.failed[name] = str(exc)
 
-    # Juro real no mundo: BIS (taxas básicas e inflação de 10 países), 3 anos de janela.
-    bis_start = today.replace(year=today.year - 3, day=1)
+    # Juro real no mundo: BIS (taxas básicas e inflação de 10 países), 11 anos de janela
+    # (10 anos de série no site + folga para o atraso de ~1 mês do BIS).
+    bis_start = today.replace(year=today.year - 11, day=1)
     bis_rows: list[tuple[str, str, float]] = []
     for name, fn in (
         ("BIS:taxas-basicas", lambda: bis.fetch_policy(bis_start)),
