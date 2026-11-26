@@ -78,9 +78,14 @@ def make_synthetic(path):
                 p *= math.exp(rnd.gauss(0, 0.02))
                 series.append((d.isoformat(), p))
             db.upsert_prices(conn, a.symbol, series)
-        for i in INDICATORS:
-            db.upsert_prices(conn, i.symbol, [("2026-10-01", 4.5), ("2026-11-20", 13.75)])
+        from pipeline import macro, us
         from pipeline.tests.test_ibge import fill
+
+        meses = [macro.shift_months("2024-11-01", k) for k in range(24)]
+        for i in INDICATORS:
+            db.upsert_prices(conn, i.symbol, [(m, 4.5) for m in meses] + [("2026-11-20", 13.75)])
+        us.upsert(conn, [(macro.month_end(m), "effr", 3.88) for m in meses])
+        us.upsert(conn, [(macro.shift_months("2023-11-01", k), "cpi", 300 + k) for k in range(36)])
         fill(conn)
 
 

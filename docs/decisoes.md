@@ -81,6 +81,15 @@ Formato: **decisão** · motivo · alternativas consideradas.
     - **Deploy:** o workflow passa a coletar também em `push` e no CI (antes só reexportava). Assim, uma fonte nova tem dados já no primeiro deploy, sem esperar a coleta noturna.
     - **Celular:** a barra fica numa linha própria, com a largura toda, embaixo do nome; na web, em três colunas.
 
+39. **Juro real Brasil × EUA (tela Mundo)**, ex-post, mensal, 24 meses, pela conta de Fisher `(1 + juro) ÷ (1 + inflação) − 1`:
+    - **Brasil:** SELIC meta vigente no último dia do mês (BCB 432) e IPCA 12 meses (BCB 13522).
+    - **EUA (fontes oficiais sem chave):** EFFR do **New York Fed** (Markets API) e CPI-U sem ajuste sazonal (CUUR0000SA0) da **BLS API v1**. O CPI 12 meses só é calculado quando o mês e o mesmo mês do ano anterior existem: a BLS não publicou outubro/2025, então out/2025 e out/2026 ficam sem ponto e o card diz isso. A referência mais recente dos EUA fica um mês atrás da do Brasil.
+    - Recusados: a API do FRED (exige chave), o `fredgraph.csv` (não documentado) e o DBnomics (agregador com atraso).
+    - Texto só descritivo: *"juro real mais alto tende a atrair investimento estrangeiro — um dos fatores que influenciam o dólar, não o único"*.
+    - Tabela `us_series (series, date, value)`, upsert idempotente; saúde: EFFR com no máximo 7 dias, CPI com no máximo 80. Os indicadores do BCB passam a guardar 800 dias (os preços seguem com 400) para cobrir 24 meses.
+40. **Desemprego com filtro de período** (2 anos, 5 anos ou desde 2012): o SIDRA tem a série desde 2012 (175 trimestres móveis), toda exportada; a tela recorta. Em "Desde 2012", uma frase mostra o maior e o menor valor da série.
+41. **Inflação × meta (tela Brasil, abaixo do Desemprego):** IPCA 12 meses (BCB) contra a meta contínua do **CMN**, 3,0% com tolerância de 1,5 ponto (faixa de 1,5% a 4,5%), desenhada como faixa no gráfico. A frase diz se o dado está "acima do teto", "abaixo do piso" ou "dentro do intervalo". A meta é uma constante documentada em `pipeline/macro.py` e precisa ser revista se o CMN mudar.
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.

@@ -3,7 +3,8 @@
 import { useReducedMotion, motion } from "motion/react";
 import { useState } from "react";
 import { formatMonthShort, formatMonthYear, formatPct, formatPp, formatRollingQuarter, formatSignedPct } from "@/lib/format";
-import type { Ibge } from "@/lib/schema";
+import type { Ibge, Macro } from "@/lib/schema";
+import { InflationTargetCard } from "./MacroViews";
 import { LineChart } from "./LineChart";
 import { Card } from "./ui";
 
@@ -13,7 +14,17 @@ type Mode = "monthly" | "yoy";
  * Economia brasileira (IBGE · SIDRA): inflação por grupo e desemprego.
  * Só descreve o dado publicado — sem projeção nem relação de causa.
  */
-export function IbgeView({ data, start = 0, children }: { data: Ibge; start?: number; children?: React.ReactNode }) {
+export function IbgeView({
+  data,
+  target,
+  start = 0,
+  children,
+}: {
+  data: Ibge;
+  target: Macro["inflationTarget"];
+  start?: number;
+  children?: React.ReactNode;
+}) {
   return (
     <section aria-labelledby="economia-br" className="flex flex-col gap-3 lg:gap-4">
       <div className="px-5 lg:px-0">
@@ -25,7 +36,11 @@ export function IbgeView({ data, start = 0, children }: { data: Ibge; start?: nu
       {children}
       <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-4">
         <InflationByGroup data={data} i={start} />
-        <Unemployment data={data} i={start + 1} />
+        {/* coluna da direita: desemprego e, embaixo, inflação × meta */}
+        <div className="flex flex-col gap-3 lg:gap-4">
+          <Unemployment data={data} i={start + 1} />
+          <InflationTargetCard data={target} i={start + 2} />
+        </div>
       </div>
     </section>
   );
@@ -150,16 +165,43 @@ function InflationByGroup({ data, i }: { data: Ibge; i: number }) {
   );
 }
 
+const UNEMP_PERIODS = [
+  { id: "2a", label: "2 anos", months: 24 },
+  { id: "5a", label: "5 anos", months: 60 },
+  { id: "all", label: "Desde 2012", months: Infinity },
+] as const;
+
 function Unemployment({ data, i }: { data: Ibge; i: number }) {
   const u = data.unemployment;
+  const [period, setPeriod] = useState<(typeof UNEMP_PERIODS)[number]["id"]>("2a");
   const diff = u.yearAgo === null ? null : u.value - u.yearAgo;
-  const points = u.series as [string, number][];
+  const all = u.series as [string, number][];
+  const n = UNEMP_PERIODS.find((p) => p.id === period)!.months;
+  const points = Number.isFinite(n) ? all.slice(-n) : all;
+  const label = UNEMP_PERIODS.find((p) => p.id === period)!.label.toLowerCase();
   return (
     <Card i={i} className="mx-5 lg:mx-0" aria-labelledby="desemprego">
-      <h3 id="desemprego" className="text-[15px] font-bold">
-        Desemprego
-      </h3>
-      <p className="text-[12px] text-muted">PNAD Contínua · trimestre {formatRollingQuarter(u.date)} · Fonte: IBGE</p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 id="desemprego" className="text-[15px] font-bold">
+            Desemprego
+          </h3>
+          <p className="text-[12px] text-muted">PNAD Contínua · trimestre {formatRollingQuarter(u.date)} · Fonte: IBGE</p>
+        </div>
+        <div role="group" aria-label="Período do desemprego" className="flex rounded-[10px] bg-soft p-0.5">
+          {UNEMP_PERIODS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              aria-pressed={period === p.id}
+              onClick={() => setPeriod(p.id)}
+              className={`min-h-9 rounded-[8px] px-2.5 text-[13px] font-semibold transition-colors ${period === p.id ? "bg-fg text-inverse-fg" : "text-fg hover:bg-line"}`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="num font-display text-[30px] font-semibold">{formatPct(u.value, 1)}</span>
         {diff !== null && (
@@ -174,7 +216,8 @@ function Unemployment({ data, i }: { data: Ibge; i: number }) {
           series={[{ id: "desocupacao", label: "Desemprego", points, tone: "fg" }]}
           height={130}
           heightClass="h-[130px] lg:h-[180px]"
-          label="Taxa de desemprego nos últimos 24 meses"
+          label={`Taxa de desemprego, ${period === "all" ? "desde 2012" : `últimos ${label}`}`}
+          animKey={period}
           description={`De ${formatPct(points[0][1], 1)} (${formatMonthShort(points[0][0])}) para ${formatPct(u.value, 1)} (${formatMonthShort(u.date)}).`}
           formatValue={(v) => formatPct(v, 1)}
           formatDate={formatMonthShort}
@@ -182,6 +225,16 @@ function Unemployment({ data, i }: { data: Ibge; i: number }) {
       </div>
       <p className="mt-2 text-[12px] leading-snug text-muted">
         Percentual de pessoas de 14 anos ou mais que procuraram trabalho e não encontraram. Cada ponto é a média de três meses.
+        {period === "all" && (() => {
+          const max = all.reduce((a, b) => (b[1] > a[1] ? b : a));
+          const min = all.reduce((a, b) => (b[1] < a[1] ? b : a));
+          return (
+            <>
+              {" "}
+              Desde 2012, o maior valor foi {formatPct(max[1], 1)} ({formatMonthShort(max[0])}) e o menor, {formatPct(min[1], 1)} ({formatMonthShort(min[0])}).
+            </>
+          );
+        })()}
       </p>
     </Card>
   );

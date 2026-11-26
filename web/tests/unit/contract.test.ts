@@ -3,7 +3,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { glossarySchema, ibgeSchema, portfolioSchema, PERIODS, seriesSchema, summarySchema } from "@/lib/schema";
+import { glossarySchema, ibgeSchema, macroSchema, portfolioSchema, PERIODS, seriesSchema, summarySchema } from "@/lib/schema";
 
 const DIR = path.join(__dirname, "..", "..", "public", "data");
 const has = existsSync(path.join(DIR, "summary.json"));
@@ -26,6 +26,18 @@ describe.skipIf(!has)("JSON gerados pelo pipeline", () => {
     const soma = g.ipca.groups.reduce((a, x) => a + x.impact, 0);
     expect(soma).toBeCloseTo(g.ipca.general.monthly, 1); // convenção do IBGE (arredondamentos)
     expect(g.unemployment.series.at(-1)![0]).toBe(g.unemployment.date);
+  });
+  it("macro.json: juro real pela conta de Fisher e meta coerente", () => {
+    const m = macroSchema.parse(read("macro.json"));
+    const fisher = (i: number, p: number) => ((1 + i / 100) / (1 + p / 100) - 1) * 100;
+    for (const k of ["br", "us"] as const) {
+      const r = m.realRate[k];
+      expect(r.real).toBeCloseTo(fisher(r.nominal, r.inflation), 3);
+    }
+    const t = m.inflationTarget;
+    expect(t.lower).toBeLessThan(t.center);
+    expect(t.center).toBeLessThan(t.upper);
+    expect(t.series.at(-1)![0]).toBe(t.latest.month);
   });
   it("série do período começa no preço-base", () => {
     const s = seriesSchema.parse(read("series/petr4.json"));

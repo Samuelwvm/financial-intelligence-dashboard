@@ -18,17 +18,21 @@ import time
 
 import pandas as pd
 
-from . import db, export, health, ibge
+from . import db, export, health, ibge, us
 from .assets import ASSETS, INDICATORS
+from datetime import timedelta
+
 from .collectors import CollectResult, clean_rows, fetch_bcb, fetch_yahoo, utc_today, window_start, with_retry
 
-KEEP_DAYS = 400
+KEEP_DAYS = 400  # preços
+KEEP_DAYS_MACRO = 800  # indicadores do BCB: 24 meses de juro real e inflação × meta
 
 
 def collect(conn, today) -> CollectResult:
     """Busca todas as séries ANTES de gravar qualquer coisa."""
     result = CollectResult()
     start = window_start(today)
+    macro_start = today - timedelta(days=KEEP_DAYS_MACRO)
     fetched: dict[str, list[tuple[str, float]]] = {}
     for a in ASSETS:
         try:
@@ -41,7 +45,7 @@ def collect(conn, today) -> CollectResult:
         time.sleep(0.3)  # gentileza com a fonte
     for ind in INDICATORS:
         try:
-            rows = clean_rows(with_retry(lambda: fetch_bcb(ind.bcb_code, start, today), ind.symbol), today, allow_nonpositive=True)
+            rows = clean_rows(with_retry(lambda: fetch_bcb(ind.bcb_code, macro_start, today), ind.symbol), today, allow_nonpositive=True)
             fetched[ind.symbol] = rows
         except Exception as exc:  # noqa: BLE001
             result.failed[ind.symbol] = str(exc)
@@ -53,7 +57,17 @@ def collect(conn, today) -> CollectResult:
         except Exception as exc:  # noqa: BLE001
             result.failed[name] = str(exc)
 
-    total = len(ASSETS) + len(INDICATORS) + 2
+    us_rows: list[tuple[str, str, float]] = []
+    for name, fn in (
+        ("EUA:EFFR", lambda: us.fetch_effr(macro_start, today)),
+        ("EUA:CPI", lambda: us.fetch_cpi(today.year - 3, today.year)),
+    ):
+        try:
+            us_rows += with_retry(fn, name)
+        except Exception as exc:  # noqa: BLE001
+            result.failed[name] = str(exc)
+
+    total = len(ASSETS) + len(INDICATORS) + 4
     if len(result.failed) > total / 2:
         raise RuntimeError(f"{len(result.failed)}/{total} coletas falharam; nada foi gravado: {result.failed}")
 
@@ -61,6 +75,8 @@ def collect(conn, today) -> CollectResult:
         result.ok[symbol] = db.upsert_prices(conn, symbol, rows)
     if ibge_rows:
         result.ok["IBGE"] = ibge.upsert(conn, ibge_rows)
+    if us_rows:
+        result.ok["EUA"] = us.upsert(conn, us_rows)
     return result
 
 
@@ -81,8 +97,13 @@ def recalc_variations(conn) -> None:
 
 
 def purge(conn, today) -> int:
-    cutoff = pd.Timestamp(today) - pd.Timedelta(days=KEEP_DAYS)
-    return conn.execute("DELETE FROM assets_history WHERE date < ?", (cutoff.strftime("%Y-%m-%d"),)).rowcount
+    prices = (pd.Timestamp(today) - pd.Timedelta(days=KEEP_DAYS)).strftime("%Y-%m-%d")
+    macro = (pd.Timestamp(today) - pd.Timedelta(days=KEEP_DAYS_MACRO)).strftime("%Y-%m-%d")
+    indicators = [i.symbol for i in INDICATORS]
+    marks = ",".join("?" * len(indicators))
+    n = conn.execute(f"DELETE FROM assets_history WHERE date < ? AND symbol NOT IN ({marks})", (prices, *indicators)).rowcount
+    n += conn.execute(f"DELETE FROM assets_history WHERE date < ? AND symbol IN ({marks})", (macro, *indicators)).rowcount
+    return n
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -122,9 +143,10 @@ def main(argv: list[str] | None = None) -> int:
         conn.execute("ANALYZE")
         last = db.last_dates(conn)
         last_ibge = ibge.last_dates(conn)
+        last_us = us.last_dates(conn)
     print(f"Limpeza: {removed} registro(s) com mais de {KEEP_DAYS} dias removido(s)")
 
-    problems = health.check(last, today) + health.check_ibge(last_ibge, today)
+    problems = health.check(last, today) + health.check_ibge(last_ibge, today) + health.check_us(last_us, today)
     status = "Sucesso"
     if problems:
         print("Saúde do pipeline: PROBLEMAS", file=sys.stderr)

@@ -35,6 +35,7 @@ export function LineChart({
   baseline,
   heightClass,
   formatDate = formatShortDate,
+  band,
 }: {
   series: ChartSeries[];
   height?: number;
@@ -47,6 +48,8 @@ export function LineChart({
   heightClass?: string;
   /** Rótulo da data no detalhe (padrão "12 nov"; séries mensais usam "set/26"). */
   formatDate?: (iso: string) => string;
+  /** Faixa horizontal de fundo (ex.: intervalo de tolerância da meta de inflação). */
+  band?: { low: number; high: number; label?: string };
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(342);
@@ -70,6 +73,7 @@ export function LineChart({
   const geo = useMemo(() => {
     const all = series.flatMap((s) => s.points.map((p) => p[1]));
     if (baseline !== undefined) all.push(baseline);
+    if (band) all.push(band.low, band.high);
     if (all.length === 0) return null;
     let min = Math.min(...all);
     let max = Math.max(...all);
@@ -96,7 +100,7 @@ export function LineChart({
       return { s, pts, line, area };
     });
     return { paths, dates, x, y };
-  }, [series, w, height, baseline]);
+  }, [series, w, height, baseline, band]);
 
   if (!geo || geo.dates.length < 2) {
     return (
@@ -146,8 +150,18 @@ export function LineChart({
             />
           ) : null,
         )}
+        {band && (
+          <rect
+            x={0}
+            y={geo.y(band.high)}
+            width={w}
+            height={Math.max(0, geo.y(band.low) - geo.y(band.high))}
+            fill="var(--pos-soft)"
+            opacity={0.7}
+          />
+        )}
         {baseline !== undefined && (
-          <line x1={0} x2={w} y1={geo.y(baseline)} y2={geo.y(baseline)} stroke="var(--line)" strokeWidth={1} strokeDasharray="3 4" />
+          <line x1={0} x2={w} y1={geo.y(baseline)} y2={geo.y(baseline)} stroke="var(--muted)" strokeOpacity={0.55} strokeWidth={1} strokeDasharray="3 4" />
         )}
         {geo.paths.map(({ s, line }) => (
           <motion.path

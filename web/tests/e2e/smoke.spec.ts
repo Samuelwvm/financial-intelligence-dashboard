@@ -262,3 +262,26 @@ test("Brasil: inflação por grupo (IBGE) alterna mês/12 meses e desemprego com
   await expect(des).toContainText("PNAD Contínua");
   await expect(des.getByRole("img", { name: /desemprego/i })).toBeVisible();
 });
+
+test("Mundo: juro real Brasil × EUA com fontes e conta de Fisher", async ({ page }) => {
+  await page.goto("/mundo/");
+  const card = page.locator('section[aria-labelledby="juro-real"]');
+  await expect(card).toContainText("Juro real: Brasil × EUA");
+  await expect(card).toContainText(/Brasil · \w{3}\/\d{2}/);
+  await expect(card).toContainText("New York Fed");
+  await expect(card).toContainText("um dos fatores que influenciam o dólar, não o único");
+  await expect(card.getByRole("img", { name: /Juro real do Brasil e dos EUA/ })).toBeVisible();
+});
+
+test("Brasil: desemprego com filtro de período e inflação × meta", async ({ page }) => {
+  await page.goto("/brasil/");
+  const des = page.locator('section[aria-labelledby="desemprego"]');
+  const chart = des.getByRole("img", { name: /Taxa de desemprego/ });
+  await expect(chart).toHaveAttribute("aria-label", /2 anos/);
+  await des.getByRole("button", { name: "Desde 2012" }).click();
+  await expect(chart).toHaveAttribute("aria-label", /desde 2012/);
+  await expect(des).toContainText("Desde 2012, o maior valor foi");
+  const meta = page.locator('section[aria-labelledby="meta-inflacao"]');
+  await expect(meta).toContainText(/(acima do teto|abaixo do piso|dentro do intervalo) da meta/);
+  await expect(meta.getByRole("img", { name: /faixa da meta/ })).toBeVisible();
+});
