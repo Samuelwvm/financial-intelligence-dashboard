@@ -138,7 +138,7 @@ export function SelectMenu({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: reduce ? 0 : -4 }}
               transition={{ duration: reduce ? 0 : 0.15 }}
-              className="absolute top-full left-0 z-30 mt-1.5 max-h-72 w-max min-w-full overflow-y-auto rounded-[14px] border border-line bg-card p-1 shadow-[var(--shadow)] outline-none"
+              className="absolute top-full left-0 z-30 mt-1.5 thin-scroll max-h-[min(24rem,60vh)] w-max min-w-full overflow-y-auto rounded-[14px] border border-line bg-card p-1 shadow-[var(--shadow)] outline-none"
             >
               {options.map((o, i) => {
                 const isSel = i === selected;
