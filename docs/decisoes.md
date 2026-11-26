@@ -96,6 +96,8 @@ Formato: **decisão** · motivo · alternativas consideradas.
     - **Gráficos legíveis sem legenda em texto:** eixo com valores (Desemprego, Inflação × meta, Juro real) e linhas de referência rotuladas numa margem à direita (teto, meta, piso), para que o rótulo nunca cruze a linha do dado.
 43. **Teste do carrossel estável:** o teste esperava 1,5 s e media uma vez; sob carga o navegador desenha menos quadros e ele falhava de vez em quando. Agora espera o movimento (até 8 s) com o mouse longe do carrossel. Passou 40 de 40 vezes com 8 testes em paralelo.
 
+44. **Inflação por grupo em uma coluna e com barras em verde leve no modo claro.** A lista é um ranking e deve ser lida de cima para baixo (duas colunas quebravam a ordem); na web, o resumo e a explicação de *peso* ficam ao lado. As barras usam `--bar-ipca`: verde suave no claro (pedido do dono do projeto) e neutro no escuro. O verde é deliberadamente fraco, para não sugerir "inflação subindo = bom".
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.

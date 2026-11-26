@@ -90,7 +90,7 @@ function InflationByGroup({ data, i, className = "" }: { data: Ibge; i: number; 
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: reduce ? 0 : 0.4, ease: [0.2, 0.7, 0.2, 1] }}
-          className="absolute inset-y-0 rounded-full bg-muted/60"
+          className="absolute inset-y-0 rounded-full bg-[var(--bar-ipca)]"
           style={value >= 0 ? { left: "50%", width: `${w / 2}%`, transformOrigin: "left" } : { right: "50%", width: `${w / 2}%`, transformOrigin: "right" }}
         />
       </span>
@@ -101,7 +101,7 @@ function InflationByGroup({ data, i, className = "" }: { data: Ibge; i: number; 
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: reduce ? 0 : 0.4, ease: [0.2, 0.7, 0.2, 1] }}
-          className="h-full rounded-full bg-muted/60"
+          className="h-full rounded-full bg-[var(--bar-ipca)]"
           style={{ width: `${w}%`, transformOrigin: "left" }}
         />
       </span>
