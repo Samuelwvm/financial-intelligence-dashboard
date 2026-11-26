@@ -264,14 +264,19 @@ test("Brasil: inflação por grupo (IBGE) alterna mês/12 meses e desemprego com
   await expect(des.getByRole("img", { name: /desemprego/i })).toBeVisible();
 });
 
-test("Mundo: juro real Brasil × EUA com fontes e conta de Fisher", async ({ page }) => {
+test("Mundo: juro real no mundo — ranking, Brasil × país escolhido e cuidados", async ({ page }) => {
   await page.goto("/mundo/");
   const card = page.locator('section[aria-labelledby="juro-real"]');
-  await expect(card).toContainText("Juro real: Brasil × EUA");
-  await expect(card).toContainText(/Brasil · \w{3}\/\d{2}/);
-  await expect(card).toContainText("New York Fed");
+  await expect(card).toContainText("Juro real no mundo");
+  await expect(card.getByRole("listitem").filter({ hasText: /º/ })).toHaveCount(10);
+  await expect(card).toContainText("Fonte única: BIS");
+  await expect(card).toContainText("cerca de 1 mês depois das fontes nacionais");
   await expect(card).toContainText("um dos fatores que influenciam o dólar, não o único");
-  await expect(card.getByRole("img", { name: /Juro real do Brasil e dos EUA/ })).toBeVisible();
+  const chart = card.getByRole("img", { name: /Juro real do Brasil e de EUA/ });
+  await expect(chart).toBeVisible();
+  await card.getByRole("button", { name: "México", exact: true }).click();
+  await expect(card.getByRole("img", { name: /Juro real do Brasil e de México/ })).toBeVisible();
+  await expect(card).toContainText("Brasil × México");
 });
 
 test("Brasil: desemprego com filtro de período e inflação × meta", async ({ page }) => {
