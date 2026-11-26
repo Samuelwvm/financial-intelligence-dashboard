@@ -32,7 +32,7 @@ test("tema escuro persistido é aplicado antes da pintura (sem flash)", async ({
 });
 
 test("alternar tema persiste", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("/", { waitUntil: "networkidle" }); // o botão só responde depois da hidratação
   const before = await page.locator("html").getAttribute("data-theme");
   await page.getByRole("button", { name: /Ativar modo|Modo (claro|escuro)/ }).first().click();
   const after = await page.locator("html").getAttribute("data-theme");
@@ -231,3 +231,21 @@ test("em linguagem simples: web usa setas e pontinhos; celular arrasta", async (
     expect(await visible()).not.toBe(first);
   }
 });
+
+// FEATURE DESATIVADA (CDI/IPCA no gráfico; docs/decisoes.md §35–37):
+// test("desempenho: carteira comparada ao Ibovespa, CDI e IPCA (liga/desliga)", async ({ page }) => {
+//   test.skip(test.info().project.name !== "web", "no celular o gráfico fica no painel Risco x retorno");
+//   await page.goto("/");
+//   const card = page.locator("section", { has: page.getByRole("heading", { name: "Desempenho relativo (base 100)" }) });
+//   const chart = card.getByRole("img", { name: /CDI e à inflação/ });
+//   await expect(chart).toBeVisible();
+//   const cdi = card.getByRole("button", { name: /^CDI/ });
+//   await expect(cdi).toContainText(/[+−]\d+,\d%/);
+//   await expect(card.getByRole("button", { name: /^IPCA/ })).toContainText(/%/);
+//   const lines = () => chart.locator("path[fill=none]").count();
+//   const before = await lines();
+//   expect(before).toBe(4); // carteira, Ibovespa, CDI, IPCA
+//   await cdi.click();
+//   await expect(cdi).toHaveAttribute("aria-pressed", "false");
+//   expect(await lines()).toBe(3);
+// });

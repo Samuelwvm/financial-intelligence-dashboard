@@ -5,6 +5,7 @@ Funções puras sobre listas (date ISO, price), ordenadas por data.
 
 from __future__ import annotations
 
+import calendar
 import math
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -94,3 +95,72 @@ def align_ffill(columns: dict[str, list[tuple[str, float]]]) -> tuple[list[str],
             vals.append(cur)
         out[key] = vals
     return dates, out
+
+
+# ── Referências de renda fixa e inflação (base 100 no 1º dia da série) ─────────
+# Usadas para comparar a carteira com "deixar no CDI" e com a inflação no mesmo período.
+
+
+def _days_after(start: str, end: str):
+    d = date.fromisoformat(start) + timedelta(days=1)
+    last = date.fromisoformat(end)
+    while d <= last:
+        yield d
+        d += timedelta(days=1)
+
+
+def cdi_index(dates: list[str], cdi: Series) -> list[float]:
+    """CDI acumulado (base 100 em dates[0]), composto por dia útil:
+    fator diário = (1 + taxa_anual/100) ** (1/252) — convenção do CDI.
+    Dias úteis depois da última taxa publicada (o BCB divulga com 1–2 dias de atraso)
+    usam a última taxa; feriados dentro do histórico (sem taxa) não rendem."""
+    if not dates:
+        return []
+    rates = dict(cdi)
+    last_date = max(rates) if rates else ""
+    last_rate = rates[last_date] if rates else 0.0
+    out, acc, prev = [], 100.0, dates[0]
+    for d in dates:
+        for day in _days_after(prev, d):
+            iso = day.isoformat()
+            if iso in rates:
+                r = rates[iso]
+            elif iso > last_date and day.weekday() < 5:
+                r = last_rate
+            else:
+                continue
+            acc *= (1 + r / 100) ** (1 / ANNUALIZATION)
+        out.append(acc)
+        prev = d
+    return out
+
+
+def ipca_index(dates: list[str], ipca: Series) -> list[float]:
+    """IPCA acumulado (base 100 em dates[0]), pró-rata por dia corrido:
+    cada dia do mês M rende (1 + IPCA_M/100) ** (1/dias_de_M).
+    Meses ainda não divulgados (ou ausentes) usam o último IPCA conhecido antes deles."""
+    if not dates:
+        return []
+    monthly = sorted((d[:7], v) for d, v in ipca)
+
+    def rate_for(month: str) -> float:
+        val = 0.0
+        for m, v in monthly:
+            if m <= month:
+                val = v
+            else:
+                break
+        return val
+
+    cache: dict[str, float] = {}
+    out, acc, prev = [], 100.0, dates[0]
+    for d in dates:
+        for day in _days_after(prev, d):
+            month = day.strftime("%Y-%m")
+            if month not in cache:
+                cache[month] = rate_for(month)
+            n = calendar.monthrange(day.year, day.month)[1]
+            acc *= (1 + cache[month] / 100) ** (1 / n)
+        out.append(acc)
+        prev = d
+    return out

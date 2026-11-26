@@ -50,11 +50,14 @@ def with_retry(fn: Callable[[], list[tuple[str, float]]], label: str,
     raise CollectError(f"{label}: falhou após {retries} tentativas ({last})")
 
 
-def clean_rows(rows: list[tuple[str, float]], today: date) -> list[tuple[str, float]]:
-    """Remove NaN, valores não positivos e datas futuras."""
+def clean_rows(rows: list[tuple[str, float]], today: date, allow_nonpositive: bool = False) -> list[tuple[str, float]]:
+    """Remove NaN, datas futuras e — só para preços — valores não positivos.
+    Indicadores (BCB) podem ser zero ou negativos: IPCA de ago/2026 foi −0,32% (deflação)."""
     out = []
     for d, p in rows:
-        if p is None or (isinstance(p, float) and math.isnan(p)) or p <= 0:
+        if p is None or (isinstance(p, float) and math.isnan(p)):
+            continue
+        if p <= 0 and not allow_nonpositive:
             continue
         if date.fromisoformat(d) > today:
             continue

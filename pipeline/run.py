@@ -41,7 +41,7 @@ def collect(conn, today) -> CollectResult:
         time.sleep(0.3)  # gentileza com a fonte
     for ind in INDICATORS:
         try:
-            rows = clean_rows(with_retry(lambda: fetch_bcb(ind.bcb_code, start, today), ind.symbol), today)
+            rows = clean_rows(with_retry(lambda: fetch_bcb(ind.bcb_code, start, today), ind.symbol), today, allow_nonpositive=True)
             fetched[ind.symbol] = rows
         except Exception as exc:  # noqa: BLE001
             result.failed[ind.symbol] = str(exc)

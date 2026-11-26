@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { formatPct, formatPlain, formatPrice, formatSignedPct, formatDate } from "@/lib/format";
-import { curveReturn, portfolioCurve, seriesCurve } from "@/lib/portfolio";
+import { curveReturn, portfolioCurve, rebaseAt, seriesCurve } from "@/lib/portfolio";
 import type { PortfolioData } from "@/lib/schema";
 
 const nbsp = (s: string) => s.replace(/ /g, " ");
@@ -55,5 +55,22 @@ describe("carteira (média base 100 com pesos iguais)", () => {
       ["2026-01-03", 100],
       ["2026-01-05", 90],
     ]);
+  });
+});
+
+describe("referências partem do mesmo ponto que a carteira", () => {
+  const cdi: [string, number][] = [["2026-01-02", 100], ["2026-01-05", 100.1], ["2026-01-06", 100.2]];
+  it("rebaseia para 100 no 1º dia da carteira e corta o que vem antes", () => {
+    const r = rebaseAt(cdi, "2026-01-05");
+    expect(r[0]).toEqual(["2026-01-05", 100]);
+    expect(r[1][1]).toBeCloseTo((100.2 / 100.1) * 100);
+  });
+  it("dia da carteira sem ponto da referência usa o último anterior (fim de semana)", () => {
+    const r = rebaseAt(cdi, "2026-01-04"); // domingo
+    expect(r[0]).toEqual(["2026-01-04", 100]);
+    expect(r[1][1]).toBeCloseTo(100.1);
+  });
+  it("sem início definido devolve a curva original", () => {
+    expect(rebaseAt(cdi, undefined)).toBe(cdi);
   });
 });

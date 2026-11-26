@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { PERIOD_LABEL, PERIOD_LONG, formatSignedPct } from "@/lib/format";
 import { usePortfolio, usePortfolioData } from "@/lib/hooks";
-import { curveReturn, portfolioCurve, seriesCurve } from "@/lib/portfolio";
+import { curveReturn, portfolioCurve, rebaseAt, seriesCurve } from "@/lib/portfolio"; // REFERENCES: feature CDI/IPCA desativada
 import type { AssetSummary, Period, PortfolioData } from "@/lib/schema";
 import { AssetLogo } from "./AssetLogo";
 import { CountUp } from "./CountUp";
@@ -34,7 +34,29 @@ export function Portfolio({ candidates, defaults, benchmark, initial }: Props) {
   const selected = slugs.map((s) => bySlug[s]).filter(Boolean);
 
   const curve = useMemo(() => (state.status === "ready" ? portfolioCurve(state.data, slugs) : []), [state, slugs]);
-  const bench = useMemo(() => (state.status === "ready" ? seriesCurve(state.data, benchmark.slug) : []), [state, benchmark.slug]);
+  const start = curve[0]?.[0];
+  // Ibovespa rebaseado no 1º dia da carteira: as duas linhas partem do mesmo 100.
+  const bench = useMemo(
+    () => (state.status === "ready" ? rebaseAt(seriesCurve(state.data, benchmark.slug), start) : []),
+    [state, benchmark.slug, start],
+  );
+  /*
+   * FEATURE DESATIVADA — linhas de CDI e IPCA no gráfico de desempenho (ver docs/decisoes.md §35–37).
+   * Nos períodos curtos (inclusive o padrão de 30 dias) elas ocupavam 1–6% da altura do gráfico,
+   * ficando como linhas retas no topo — ruído visual. Para reativar: descomentar este bloco, o item
+   * de `lines` abaixo, a legenda interativa, o export em pipeline/export.py e as cores em globals.css.
+   *
+   * const refs = useMemo(
+   *   () =>
+   *     REFERENCES.map((r) => ({
+   *       ...r,
+   *       points: state.status === "ready" ? rebaseAt(seriesCurve(state.data, r.id), start) : [],
+   *     })),
+   *   [state, start],
+   * );
+   * const [hidden, setHidden] = useState<Record<string, boolean>>({});
+   * const toggle = (id: string) => setHidden((h) => ({ ...h, [id]: !h[id] }));
+   */
   const ret =
     period === "1d"
       ? selected.reduce((a, s) => a + s.stats["1d"].ret, 0) / Math.max(1, selected.length)
@@ -44,11 +66,19 @@ export function Portfolio({ candidates, defaults, benchmark, initial }: Props) {
     { id: benchmark.slug, label: benchmark.ticker, risk: benchmark.stats[period].vol, ret: benchmark.stats[period].ret, reference: true },
   ];
 
+  const lines = [
+    { id: benchmark.slug, label: benchmark.name, points: bench, tone: "fg" as const, dashed: true as const },
+    // FEATURE DESATIVADA (CDI/IPCA):
+    // ...refs.map((r) => ({ id: r.id, label: r.label, points: r.points, tone: r.tone, dashed: r.dashed })),
+  ];
   const perfSeries: ChartSeries[] = [
     { id: "carteira", label: "Minha carteira", points: curve, tone: "pos", area: true, width: 3 },
-    { id: benchmark.slug, label: benchmark.name, points: bench, tone: "fg", dashed: true },
+    ...lines.filter((l) => l.points.length > 1),
   ];
-  const perfDesc = `Minha carteira ${formatSignedPct(ret)} ${PERIOD_LONG[period]}; ${benchmark.name} ${formatSignedPct(curveReturn(bench))}.`;
+  const perfDesc =
+    `Minha carteira ${formatSignedPct(ret)} ${PERIOD_LONG[period]}; ` +
+    lines.map((l) => `${l.label} ${formatSignedPct(curveReturn(l.points))}`).join("; ") +
+    ".";
   const fmtRet = useCallback((v: number) => formatSignedPct(v), []);
 
   const chart = (h: number) =>
@@ -66,6 +96,35 @@ export function Portfolio({ candidates, defaults, benchmark, initial }: Props) {
       <span className="font-bold text-fg">- - {benchmark.name}</span>
     </div>
   );
+  /*
+   * FEATURE DESATIVADA (CDI/IPCA) — legenda interativa: Ibovespa, CDI e IPCA ligavam/desligavam
+   * e mostravam quanto renderam no período.
+   *
+   * const swatch = (color: string, dash?: string | boolean, w = 2.5) => (
+   *   <svg width="18" height="6" viewBox="0 0 18 6" aria-hidden="true" className="shrink-0">
+   *     <line x1="1" y1="3" x2="17" y2="3" stroke={color} strokeWidth={w} strokeLinecap="round" strokeDasharray={dash === true ? "4 3" : dash || undefined} />
+   *   </svg>
+   * );
+   * const COLORS: Record<string, string> = { fg: "var(--fg)", cdi: "var(--series-cdi)", ipca: "var(--series-ipca)" };
+   * const legend = (
+   *   <div className="mt-2 flex flex-wrap items-center gap-x-1 gap-y-1 text-[13px]">
+   *     <span className="mr-2 inline-flex items-center gap-1.5 font-bold text-pos">
+   *       {swatch("var(--pos)", undefined, 3)} Minha carteira
+   *     </span>
+   *     {lines.map((l) => {
+   *       const off = !!hidden[l.id];
+   *       return (
+   *         <button key={l.id} type="button" aria-pressed={!off} onClick={() => toggle(l.id)}
+   *           className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-2 font-semibold hover:bg-soft ${off ? "text-muted line-through opacity-60" : "text-fg"}`}>
+   *           {swatch(COLORS[l.tone], l.dashed)}
+   *           {l.label}
+   *           {l.points.length > 1 && <span className="num font-normal text-muted">{formatSignedPct(curveReturn(l.points))}</span>}
+   *         </button>
+   *       );
+   *     })}
+   *   </div>
+   * );
+   */
 
   return (
     <>
