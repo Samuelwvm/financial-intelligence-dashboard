@@ -38,9 +38,11 @@ export function WorldRealRateCard({ data, bcbMonth, i = 0 }: { data: Macro["real
         Juro básico descontada a inflação dos últimos 12 meses · {formatMonthYear(month)} · Fonte: BIS
       </p>
 
-      <div className="mt-3 flex flex-col gap-5 lg:grid lg:grid-cols-2 lg:gap-8">
+      {/* Dois blocos empilhados em qualquer tela, separados por uma linha (como o "---" do Notion). */}
+      <div className="mt-4">
         {/* Ranking no mesmo mês para todos */}
-        <ol className="flex flex-col gap-2" aria-label={`Juro real por país em ${formatMonthYear(month)}, do maior para o menor`}>
+        <h3 className="text-[13px] font-semibold text-muted">Ranking · {formatMonthYear(month)}</h3>
+        <ol className="mt-2 flex max-w-[640px] flex-col gap-2" aria-label={`Juro real por país em ${formatMonthYear(month)}, do maior para o menor`}>
           {ranking.map((r, k) => {
             const isBr = r.code === "BR";
             const w = (Math.abs(r.real) / maxAbs) * 50;
@@ -67,6 +69,8 @@ export function WorldRealRateCard({ data, bcbMonth, i = 0 }: { data: Macro["real
             );
           })}
         </ol>
+
+        <hr className="my-5 border-t border-line" />
 
         {/* Brasil × país escolhido */}
         <div className="min-w-0">
