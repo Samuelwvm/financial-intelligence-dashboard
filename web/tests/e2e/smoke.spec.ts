@@ -276,6 +276,14 @@ test("Mundo: juro real no mundo em dois cards — ranking e comparação", async
   await rank.getByText("Sobre os dados").click();
   await expect(sobre).toBeVisible();
   await expect(rank).toContainText("cerca de 1 mês depois das fontes nacionais");
+  // Período do ranking: atual (mês) ou média de 2/5/10 anos
+  await expect(rank.getByRole("button", { name: "Atual" })).toHaveAttribute("aria-pressed", "true");
+  await rank.getByRole("button", { name: "10 anos" }).click();
+  await expect(rank).toContainText("Na média dos últimos 10 anos");
+  await expect(rank).toContainText(/média de \w{3}\/\d{2} a \w{3}\/\d{2}/);
+  await expect(rank.locator("ol > li")).toHaveCount(10);
+  await rank.getByRole("button", { name: "Atual" }).click();
+  await expect(rank).not.toContainText("Na média");
 
   const cmp = page.locator('section[aria-labelledby="juro-real-comparar"]');
   await expect(cmp.getByRole("img", { name: /Juro real do Brasil e de EUA nos últimos 2 anos/ })).toBeVisible();

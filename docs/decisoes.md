@@ -115,6 +115,12 @@ Formato: **decisão** · motivo · alternativas consideradas.
     - **Período 2 · 5 · 10 anos**, no mesmo seletor do Desemprego (agora um componente só, `Segmented`). O site exporta 10 anos do BIS (`REAL_RATE_MONTHS = 120`) e a coleta busca 11 anos (folga para o atraso de ~1 mês). Conferido: os 10 países têm a série completa; só falta o CPI dos EUA de out/2025, já listado em "Sobre os dados". O recorte é pelo calendário, para os dois países cobrirem os mesmos meses.
     - **Menu "Comparar com" próprio (`SelectMenu`)** no lugar do `<select>` nativo, cuja lista aberta não aceita estilo e destoava do sistema. Mesmos tokens (borda, raio 10/14, sombra `--shadow`, item ativo em `bg-soft`, escolhido em verde com ✓), no claro e no escuro. Acessível pelo padrão WAI-ARIA *select-only combobox*: setas, Home/End, Enter/Espaço, Esc, busca pela primeira letra (sem acento: "i" acha "Índia") e fecha ao clicar fora. O card com o menu aberto sobe de camada (`has-[[aria-expanded=true]]:z-30`) para a lista não ficar sob o card seguinte.
 
+48. **Ranking do juro real com período e menu sem barra de rolagem.**
+    - **Ranking: Atual · 2 anos · 5 anos · 10 anos.** "Atual" é o último mês que todos os países têm. Nos períodos, cada país entra com a **média mensal** do juro real, usando só os meses que o BIS publicou. A frase-resumo e o subtítulo dizem qual recorte está na tela (ex.: "média de out/16 a set/26"). As linhas se reordenam com animação (desligada com movimento reduzido). Uma média de 10 anos mostra o padrão estrutural (Brasil 4,3%, cerca de 1,6 vez o México) sem depender do mês mais recente.
+    - **"cerca de N vezes":** o número só é arredondado para inteiro a partir de 3. Abaixo disso usa uma casa decimal ("1,6 vez"), para não exagerar a diferença.
+    - **Menu de país:** a altura máxima passou para `min(24rem, 60vh)`, então os 9 países cabem sem rolagem. Se a tela for baixa, a lista usa a classe `.thin-scroll`, uma barra fina na cor da borda, sem trilho e sem setas.
+    - **`Segmented` usa `inline-flex`:** o fundo do seletor tem o tamanho dos botões em qualquer card.
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.

@@ -25,9 +25,38 @@ export function WorldRealRate({ data, bcbMonth, i = 0 }: { data: Macro["realRate
   );
 }
 
+const RANK_PERIODS = [
+  { id: "now", label: "Atual", months: 1 },
+  { id: "2a", label: "2 anos", months: 24 },
+  { id: "5a", label: "5 anos", months: 60 },
+  { id: "10a", label: "10 anos", months: 120 },
+] as const;
+
+/** "cerca de 3 vezes" / "cerca de 1,7 vez": inteiro só a partir de 3, para não arredondar 1,6 para 2. */
+function timesText(ratio: number) {
+  const n = ratio >= 3 ? Math.round(ratio) : Math.round(ratio * 10) / 10;
+  return `cerca de ${n.toLocaleString("pt-BR")} ${n >= 2 ? "vezes" : "vez"}`;
+}
+
 function RealRateRankingCard({ data, bcbMonth, i }: { data: Macro["realRate"]; bcbMonth: string; i: number }) {
   const reduce = useReducedMotion();
-  const { month, ranking, series } = data;
+  const { month, series } = data;
+  const [period, setPeriod] = useState<(typeof RANK_PERIODS)[number]["id"]>("now");
+  const sel = RANK_PERIODS.find((p) => p.id === period)!;
+  const brMonths = (series.BR as [string, number][]).map(([m]) => m);
+  const from = brMonths[Math.max(0, brMonths.length - sel.months)];
+
+  // "Atual" = ranking do último mês comum (vem do pipeline). Períodos = média mensal do juro
+  // real em cada país, só com os meses que o país tem (ex.: EUA sem out/2025).
+  const ranking =
+    period === "now"
+      ? data.ranking
+      : data.ranking
+          .map((r) => {
+            const vals = (series[r.code] as [string, number][]).filter(([m]) => m >= from && m <= month).map(([, v]) => v);
+            return { ...r, real: vals.reduce((a, b) => a + b, 0) / vals.length };
+          })
+          .sort((a, b) => b.real - a.real);
   const br = ranking.find((r) => r.code === "BR")!;
   const pos = ranking.findIndex((r) => r.code === "BR") + 1;
   const runnerUp = ranking.find((r) => r.code !== "BR")!;
@@ -45,10 +74,11 @@ function RealRateRankingCard({ data, bcbMonth, i }: { data: Macro["realRate"]; b
     .map((r) => ({ name: r.name, missing: window.filter((m) => !(series[r.code] as [string, number][]).some(([d]) => d === m)) }))
     .filter((g) => g.missing.length > 0);
 
+  const lead = period === "now" ? "O Brasil" : `Na média dos últimos ${sel.label}, o Brasil`;
   const takeaway =
     pos === 1 && runnerUp.real > 0
-      ? `O Brasil tem o maior juro real entre os ${ranking.length} países — cerca de ${Math.round(br.real / runnerUp.real)} vezes o do 2º colocado (${runnerUp.name}).`
-      : `O Brasil está em ${pos}º lugar entre os ${ranking.length} países comparados.`;
+      ? `${lead} tem o maior juro real entre os ${ranking.length} países — ${timesText(br.real / runnerUp.real)} o do 2º colocado (${runnerUp.name}).`
+      : `${lead} fica em ${pos}º lugar entre os ${ranking.length} países comparados.`;
 
   return (
     <Card i={i} className="mx-5 flex flex-col lg:mx-0" aria-labelledby="juro-real">
@@ -56,11 +86,17 @@ function RealRateRankingCard({ data, bcbMonth, i }: { data: Macro["realRate"]; b
         Juro real no mundo
       </h2>
       <p className="text-[12px] text-muted">
-        Juro básico descontada a inflação de 12 meses · {formatMonthYear(month)} · Fonte: BIS
+        Juro básico descontada a inflação de 12 meses ·{" "}
+        {period === "now" ? formatMonthYear(month) : `média de ${formatMonthShort(from)} a ${formatMonthShort(month)}`} · Fonte: BIS
       </p>
-      <p className="mt-2 text-[14px] leading-snug">{takeaway}</p>
+      <div className="mt-3">
+        <Segmented label="Período do ranking" value={period} options={RANK_PERIODS} onChange={setPeriod} />
+      </div>
+      <p className="mt-3 text-[14px] leading-snug" aria-live="polite">
+        {takeaway}
+      </p>
 
-      <ol className="mt-3 flex flex-col gap-2" aria-label={`Juro real por país em ${formatMonthYear(month)}, do maior para o menor`}>
+      <ol className="mt-3 flex flex-col gap-2" aria-label={`Juro real por país, ${period === "now" ? `em ${formatMonthYear(month)}` : `média dos últimos ${sel.label}`}, do maior para o menor`}>
         {ranking.map((r, k) => {
           const isBr = r.code === "BR";
           const w = (Math.abs(r.real) / span) * 100;
@@ -69,21 +105,26 @@ function RealRateRankingCard({ data, bcbMonth, i }: { data: Macro["realRate"]; b
               ? { left: `${zero}%`, width: `${w}%`, transformOrigin: "left" }
               : { left: `${zero - w}%`, width: `${w}%`, transformOrigin: "right" };
           return (
-            <li key={r.code} className="grid grid-cols-[1.4rem_minmax(0,7rem)_1fr_3.4rem] items-center gap-2 text-[13px]">
+            <motion.li
+              key={r.code}
+              layout={reduce ? false : "position"}
+              transition={{ duration: 0.35, ease: [0.2, 0.7, 0.2, 1] }}
+              className="grid grid-cols-[1.4rem_minmax(0,7rem)_1fr_3.4rem] items-center gap-2 text-[13px]"
+            >
               <span className="num text-right text-[11px] text-muted">{k + 1}º</span>
               <span className={`truncate ${isBr ? "font-bold text-pos" : "font-semibold"}`}>{r.name}</span>
               <span className="relative flex h-2.5" aria-hidden="true">
-                <span className="absolute inset-y-[-3px] w-px bg-line" style={{ left: `${zero}%` }} />
+                <span className="absolute inset-y-[-3px] w-px bg-line transition-[left] duration-300 motion-reduce:transition-none" style={{ left: `${zero}%` }} />
                 <motion.span
                   initial={{ scaleX: 0 }}
                   animate={{ scaleX: 1 }}
                   transition={{ duration: reduce ? 0 : 0.4, delay: reduce ? 0 : k * 0.03 }}
-                  className={`absolute inset-y-0 rounded-full ${isBr ? "bg-pos" : "bg-[var(--bar-ipca)]"}`}
+                  className={`absolute inset-y-0 rounded-full transition-[left,width] duration-300 motion-reduce:transition-none ${isBr ? "bg-pos" : "bg-[var(--bar-ipca)]"}`}
                   style={style}
                 />
               </span>
               <span className={`num text-right font-semibold ${isBr ? "text-pos" : ""}`}>{formatPct(r.real, 1)}</span>
-            </li>
+            </motion.li>
           );
         })}
       </ol>
@@ -102,6 +143,9 @@ function RealRateRankingCard({ data, bcbMonth, i }: { data: Macro["realRate"]; b
           <li>
             O BIS publica cerca de 1 mês depois das fontes nacionais: aqui o Brasil aparece em {formatMonthYear(month)}, enquanto os dados
             do Banco Central na tela Brasil já vão até {formatMonthYear(bcbMonth)}.
+          </li>
+          <li>
+            Em 2, 5 e 10 anos, o valor de cada país é a média mensal do juro real no período, com os meses que o BIS publicou.
           </li>
           <li>
             &ldquo;Juro básico&rdquo; é a taxa de política monetária que o BIS registra para cada banco central. Ela não tem o mesmo nome
