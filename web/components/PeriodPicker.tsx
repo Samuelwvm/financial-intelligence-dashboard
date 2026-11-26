@@ -41,7 +41,7 @@ export function PeriodPicker({
                 stretch ? "flex-1" : "px-4"
               } ${active ? "bg-fg text-inverse-fg" : "bg-soft text-fg hover:bg-line"}`;
         return (
-          <button key={p} type="button" aria-pressed={active} onClick={() => onChange(p)} className={`${base} transition-colors`}>
+          <button key={p} type="button" aria-pressed={active} onClick={() => onChange(p)} className={`${base} whitespace-nowrap transition-colors`}>
             {PERIOD_LABEL[p]}
           </button>
         );
