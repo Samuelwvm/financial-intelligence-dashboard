@@ -106,6 +106,11 @@ Formato: **decisão** · motivo · alternativas consideradas.
     - **Países:** grandes economias (EUA, Zona do Euro, Reino Unido, Japão), BRICS (China, Índia, África do Sul) e vizinhos (México, Chile). Constante `COUNTRIES` em `pipeline/bis.py`.
     - **Saúde:** taxa básica com no máximo 100 dias (a Índia costuma chegar ~1 mês depois dos demais) e inflação com no máximo 120, por país. O export falha se faltar algum dos 10 países.
 
+46. **Juro real no mundo em dois cards (revisão de UI/UX).** O card único misturava duas perguntas diferentes: *onde o Brasil está hoje* (comparação entre países num mês) e *como evoluiu* (série no tempo). Empilhar as duas com divisor deixava o card longo, com 9 chips pesados e a caixa de cuidados sempre aberta. Agora:
+    - **Card 1, "Juro real no mundo":** frase-resumo, ranking dos 10 países e "Sobre os dados" recolhido (`<details>`, acessível por teclado). O zero do eixo fica onde os dados pedem, não no meio, para as barras positivas (a maioria) usarem a largura.
+    - **Card 2, "Brasil × país":** lista suspensa "Comparar com" (EUA por padrão, países em ordem alfabética) no lugar dos chips, valores atuais dos dois e o gráfico de 24 meses. O título acompanha o país escolhido.
+    - **Web: lado a lado,** com a mesma altura. **Celular: empilhados,** ranking primeiro (resumo → detalhe).
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.
