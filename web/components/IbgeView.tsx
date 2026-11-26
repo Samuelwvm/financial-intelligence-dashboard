@@ -90,7 +90,7 @@ function InflationByGroup({ data, i, className = "" }: { data: Ibge; i: number; 
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: reduce ? 0 : 0.4, ease: [0.2, 0.7, 0.2, 1] }}
-          className="absolute inset-y-0 rounded-full bg-muted/60"
+          className="absolute inset-y-0 rounded-full bg-[var(--bar-ipca)]"
           style={value >= 0 ? { left: "50%", width: `${w / 2}%`, transformOrigin: "left" } : { right: "50%", width: `${w / 2}%`, transformOrigin: "right" }}
         />
       </span>
@@ -101,7 +101,7 @@ function InflationByGroup({ data, i, className = "" }: { data: Ibge; i: number; 
           initial={{ scaleX: 0 }}
           animate={{ scaleX: 1 }}
           transition={{ duration: reduce ? 0 : 0.4, ease: [0.2, 0.7, 0.2, 1] }}
-          className="h-full rounded-full bg-muted/60"
+          className="h-full rounded-full bg-[var(--bar-ipca)]"
           style={{ width: `${w}%`, transformOrigin: "left" }}
         />
       </span>
@@ -137,29 +137,41 @@ function InflationByGroup({ data, i, className = "" }: { data: Ibge; i: number; 
         </div>
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between gap-3 rounded-xl bg-soft px-3 py-2">
-        <span className="text-[13px] font-semibold">Índice geral</span>
-        <span className="num font-display text-[18px] font-semibold">{formatSignedPct(general[mode], 2)}</span>
+      {/* Uma coluna só: a lista é um ranking e deve ser lida de cima para baixo.
+          Na web, o resumo fica ao lado da lista em vez de esticar as barras até a borda. */}
+      <div className="lg:mt-1 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(220px,300px)] lg:gap-8">
+        <div className="min-w-0">
+          <div className="mt-3 flex items-baseline justify-between gap-3 rounded-xl bg-soft px-3 py-2">
+            <span className="text-[13px] font-semibold">Índice geral</span>
+            <span className="num font-display text-[18px] font-semibold">{formatSignedPct(general[mode], 2)}</span>
+          </div>
+
+          <ul className="mt-3 flex flex-col gap-2.5" aria-label={`Variação por grupo, ${mode === "monthly" ? "no mês" : "em 12 meses"}`}>
+            {sorted.map((g) => (
+              // Celular: nome e valor na 1ª linha, barra com a largura toda embaixo. Web: 3 colunas.
+              <li
+                key={g.code}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 lg:grid-cols-[minmax(0,13rem)_1fr_4.5rem] lg:gap-x-4 lg:gap-y-0"
+              >
+                <span className="col-start-1 row-start-1 min-w-0">
+                  <span className="block truncate text-[13px] font-semibold">{g.name}</span>
+                  <span className="block text-[11px] text-muted">peso {formatPct(g.weight, 1)} do orçamento</span>
+                </span>
+                <span className="col-span-2 row-start-2 flex lg:col-span-1 lg:col-start-2 lg:row-start-1">{bar(g[mode])}</span>
+                <span className="num col-start-2 row-start-1 text-right text-[13px] font-semibold lg:col-start-3">{formatSignedPct(g[mode], 2)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <aside className="mt-3 border-t border-line pt-2.5 text-[13px] leading-snug text-muted lg:mt-3 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-6">
+          <p>{sentence}</p>
+          <p className="mt-3 hidden text-[12px] lg:block">
+            <strong className="font-semibold text-fg">Peso</strong> é quanto o grupo representa no orçamento das famílias. Um
+            grupo pesado que sobe pouco pode mexer mais no IPCA do que um grupo leve que sobe muito.
+          </p>
+        </aside>
       </div>
-
-      <ul className="mt-3 flex flex-col gap-2.5 lg:grid lg:grid-flow-col lg:grid-cols-2 lg:grid-rows-5 lg:gap-x-10" aria-label={`Variação por grupo, ${mode === "monthly" ? "no mês" : "em 12 meses"}`}>
-        {sorted.map((g) => (
-          // Celular: nome e valor na 1ª linha, barra com a largura toda embaixo. Web: 3 colunas.
-          <li
-            key={g.code}
-            className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 lg:grid-cols-[minmax(0,12rem)_1fr_4.5rem] lg:gap-y-0"
-          >
-            <span className="col-start-1 row-start-1 min-w-0">
-              <span className="block truncate text-[13px] font-semibold">{g.name}</span>
-              <span className="block text-[11px] text-muted">peso {formatPct(g.weight, 1)} do orçamento</span>
-            </span>
-            <span className="col-span-2 row-start-2 flex lg:col-span-1 lg:col-start-2 lg:row-start-1">{bar(g[mode])}</span>
-            <span className="num col-start-2 row-start-1 text-right text-[13px] font-semibold lg:col-start-3">{formatSignedPct(g[mode], 2)}</span>
-          </li>
-        ))}
-      </ul>
-
-      <p className="mt-3 border-t border-line pt-2.5 text-[13px] leading-snug text-muted">{sentence}</p>
     </Card>
   );
 }

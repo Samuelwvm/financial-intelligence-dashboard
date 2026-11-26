@@ -21,6 +21,8 @@
   --primary: #0b6e55;
   --primary-fg: #ffffff;
   --inverse-fg: #ffffff; /* texto sobre o chip ativo (fundo = --fg) */
+  /* Barras da inflação por grupo: verde leve no claro (pedido do dono); neutras no escuro */
+  --bar-ipca: #a8d5c5;
   /* FEATURE DESATIVADA (CDI/IPCA no gráfico): --series-cdi: #2563a8; --series-ipca: #9a6200; */
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
@@ -39,6 +41,7 @@
   --soft: #1b2722;
   --hl: #12382d;
   --inverse-fg: #0b1210;
+  --bar-ipca: rgba(154, 168, 161, 0.6);
   /* FEATURE DESATIVADA: --series-cdi: #7fb2f0; --series-ipca: #e7b04f; */
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
@@ -59,6 +62,7 @@
     --soft: #1b2722;
     --hl: #12382d;
     --inverse-fg: #0b1210;
+  --bar-ipca: rgba(154, 168, 161, 0.6);
   /* FEATURE DESATIVADA: --series-cdi: #7fb2f0; --series-ipca: #e7b04f; */
     --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
   }
