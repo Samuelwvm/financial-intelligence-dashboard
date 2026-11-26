@@ -264,19 +264,25 @@ test("Brasil: inflação por grupo (IBGE) alterna mês/12 meses e desemprego com
   await expect(des.getByRole("img", { name: /desemprego/i })).toBeVisible();
 });
 
-test("Mundo: juro real no mundo — ranking, Brasil × país escolhido e cuidados", async ({ page }) => {
+test("Mundo: juro real no mundo em dois cards — ranking e comparação", async ({ page }) => {
   await page.goto("/mundo/");
-  const card = page.locator('section[aria-labelledby="juro-real"]');
-  await expect(card).toContainText("Juro real no mundo");
-  await expect(card.getByRole("listitem").filter({ hasText: /º/ })).toHaveCount(10);
-  await expect(card).toContainText("Fonte única: BIS");
-  await expect(card).toContainText("cerca de 1 mês depois das fontes nacionais");
-  await expect(card).toContainText("um dos fatores que influenciam o dólar, não o único");
-  const chart = card.getByRole("img", { name: /Juro real do Brasil e de EUA/ });
-  await expect(chart).toBeVisible();
-  await card.getByRole("button", { name: "México", exact: true }).click();
-  await expect(card.getByRole("img", { name: /Juro real do Brasil e de México/ })).toBeVisible();
-  await expect(card).toContainText("Brasil × México");
+  const rank = page.locator('section[aria-labelledby="juro-real"]');
+  await expect(rank).toContainText("Juro real no mundo");
+  await expect(rank.locator("ol > li")).toHaveCount(10);
+  await expect(rank).toContainText(/maior juro real|lugar entre os 10/);
+  // "Sobre os dados" recolhido por padrão e abre ao clicar
+  const sobre = rank.getByText("Fonte única: BIS");
+  await expect(sobre).toBeHidden();
+  await rank.getByText("Sobre os dados").click();
+  await expect(sobre).toBeVisible();
+  await expect(rank).toContainText("cerca de 1 mês depois das fontes nacionais");
+
+  const cmp = page.locator('section[aria-labelledby="juro-real-comparar"]');
+  await expect(cmp.getByRole("img", { name: /Juro real do Brasil e de EUA/ })).toBeVisible();
+  await cmp.getByLabel("Comparar com").selectOption({ label: "México" });
+  await expect(cmp.getByRole("heading", { name: "Brasil × México" })).toBeVisible();
+  await expect(cmp.getByRole("img", { name: /Juro real do Brasil e de México/ })).toBeVisible();
+  await expect(cmp).toContainText("um dos fatores que influenciam o dólar, não o único");
 });
 
 test("Brasil: desemprego com filtro de período e inflação × meta", async ({ page }) => {
