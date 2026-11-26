@@ -6,12 +6,14 @@ import { formatMonthShort, formatMonthYear, formatPct } from "@/lib/format";
 import type { Macro } from "@/lib/schema";
 import { IconChevron } from "./icons";
 import { LineChart } from "./LineChart";
+import { Segmented } from "./Segmented";
+import { SelectMenu } from "./SelectMenu";
 import { Card } from "./ui";
 
 /**
  * Tela Mundo — juro real no mundo, em dois cards (uma pergunta por card):
  *  1) RealRateRankingCard: "onde o Brasil está hoje?" — ranking de 10 países no mesmo mês.
- *  2) RealRateCompareCard: "como evoluiu comparado a outro país?" — série de 24 meses.
+ *  2) RealRateCompareCard: "como evoluiu comparado a outro país?" — série de 2, 5 ou 10 anos.
  * Web: lado a lado (alturas equilibradas). Celular: empilhados. Fonte única: BIS.
  */
 export function WorldRealRate({ data, bcbMonth, i = 0 }: { data: Macro["realRate"]; bcbMonth: string; i?: number }) {
@@ -37,7 +39,7 @@ function RealRateRankingCard({ data, bcbMonth, i }: { data: Macro["realRate"]; b
   const span = max - min || 1;
   const zero = (-min / span) * 100;
 
-  // Meses sem dado na janela de 24 meses (ex.: EUA sem CPI em out/2025).
+  // Meses sem dado na série de 10 anos (ex.: EUA sem CPI em out/2025).
   const window = (series.BR as [string, number][]).map(([m]) => m);
   const gaps = ranking
     .map((r) => ({ name: r.name, missing: window.filter((m) => !(series[r.code] as [string, number][]).some(([d]) => d === m)) }))
@@ -107,7 +109,7 @@ function RealRateRankingCard({ data, bcbMonth, i }: { data: Macro["realRate"]; b
           </li>
           {gaps.length > 0 && (
             <li>
-              Meses sem dado nos últimos 24 meses: {gaps.map((g) => `${g.name} (${g.missing.map(formatMonthShort).join(", ")})`).join("; ")}.
+              Meses sem dado nos últimos 10 anos: {gaps.map((g) => `${g.name} (${g.missing.map(formatMonthShort).join(", ")})`).join("; ")}.
             </li>
           )}
           <li>
@@ -120,37 +122,40 @@ function RealRateRankingCard({ data, bcbMonth, i }: { data: Macro["realRate"]; b
   );
 }
 
+const RATE_PERIODS = [
+  { id: "2a", label: "2 anos", months: 24 },
+  { id: "5a", label: "5 anos", months: 60 },
+  { id: "10a", label: "10 anos", months: 120 },
+] as const;
+
 function RealRateCompareCard({ data, i }: { data: Macro["realRate"]; i: number }) {
   const [other, setOther] = useState("US");
+  const [period, setPeriod] = useState<(typeof RATE_PERIODS)[number]["id"]>("2a");
+  const span = RATE_PERIODS.find((p) => p.id === period)!;
   const { month, ranking, series } = data;
   const br = ranking.find((r) => r.code === "BR")!;
   const sel = ranking.find((r) => r.code === other)!;
   const choices = ranking.filter((r) => r.code !== "BR").sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
-  const pts = (code: string) => series[code] as [string, number][];
+  // Recorte pelo calendário (não pela contagem de pontos), para os dois países cobrirem os mesmos meses.
+  const brAll = series.BR as [string, number][];
+  const from = brAll[Math.max(0, brAll.length - span.months)][0];
+  const pts = (code: string) => (series[code] as [string, number][]).filter(([m]) => m >= from);
 
   return (
-    <Card i={i} className="mx-5 flex flex-col lg:mx-0" aria-labelledby="juro-real-comparar">
-      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-2">
-        <div>
-          <h2 id="juro-real-comparar" className="text-[15px] font-bold">
-            Brasil × {sel.name}
-          </h2>
-          <p className="text-[12px] text-muted">Juro real nos últimos 24 meses · Fonte: BIS</p>
-        </div>
-        <label className="flex items-center gap-2 text-[12px] font-semibold text-muted">
-          Comparar com
-          <select
-            value={other}
-            onChange={(e) => setOther(e.target.value)}
-            className="min-h-11 rounded-[10px] border border-line bg-card px-3 text-[14px] font-semibold text-fg"
-          >
-            {choices.map((c) => (
-              <option key={c.code} value={c.code}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
+    <Card
+      i={i}
+      // O menu aberto precisa ficar acima dos cards seguintes (cada card tem o próprio empilhamento).
+      className="relative mx-5 flex flex-col has-[[aria-expanded=true]]:z-30 lg:mx-0"
+      aria-labelledby="juro-real-comparar"
+    >
+      <h2 id="juro-real-comparar" className="text-[15px] font-bold">
+        Brasil × {sel.name}
+      </h2>
+      <p className="text-[12px] text-muted">Juro real nos últimos {span.label} · Fonte: BIS</p>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <SelectMenu label="Comparar com" value={other} options={choices.map((c) => ({ value: c.code, label: c.name }))} onChange={setOther} />
+        <Segmented label="Período da comparação" value={period} options={RATE_PERIODS} onChange={setPeriod} />
       </div>
 
       <div className="mt-3 flex gap-5">
@@ -174,8 +179,8 @@ function RealRateCompareCard({ data, i }: { data: Macro["realRate"]; i: number }
           heightClass="h-[170px] lg:h-[200px]"
           baseline={0}
           yAxis={(x) => formatPct(x, 0)}
-          animKey={other}
-          label={`Juro real do Brasil e de ${sel.name} nos últimos 24 meses`}
+          animKey={`${other}-${period}`}
+          label={`Juro real do Brasil e de ${sel.name} nos últimos ${span.label}`}
           description={`Em ${formatMonthYear(month)}: Brasil ${formatPct(br.real, 1)}, ${sel.name} ${formatPct(sel.real, 1)}.`}
           formatValue={(x) => formatPct(x, 1)}
           formatDate={formatMonthShort}

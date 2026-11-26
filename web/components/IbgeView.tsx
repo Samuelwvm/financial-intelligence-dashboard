@@ -6,6 +6,7 @@ import { formatMonthShort, formatMonthYear, formatPct, formatPp, formatRollingQu
 import type { Ibge, Macro } from "@/lib/schema";
 import { InflationTargetCard } from "./MacroViews";
 import { LineChart } from "./LineChart";
+import { Segmented } from "./Segmented";
 import { Card } from "./ui";
 
 type Mode = "monthly" | "yoy";
@@ -199,19 +200,7 @@ function Unemployment({ data, i, className = "" }: { data: Ibge; i: number; clas
           </h3>
           <p className="text-[12px] text-muted">PNAD Contínua · trimestre {formatRollingQuarter(u.date)} · Fonte: IBGE</p>
         </div>
-        <div role="group" aria-label="Período do desemprego" className="flex rounded-[10px] bg-soft p-0.5">
-          {UNEMP_PERIODS.map((p) => (
-            <button
-              key={p.id}
-              type="button"
-              aria-pressed={period === p.id}
-              onClick={() => setPeriod(p.id)}
-              className={`min-h-9 rounded-[8px] px-2.5 text-[13px] font-semibold transition-colors ${period === p.id ? "bg-fg text-inverse-fg" : "text-fg hover:bg-line"}`}
-            >
-              {p.label}
-            </button>
-          ))}
-        </div>
+        <Segmented label="Período do desemprego" value={period} options={UNEMP_PERIODS} onChange={setPeriod} />
       </div>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="num font-display text-[30px] font-semibold">{formatPct(u.value, 1)}</span>
