@@ -79,6 +79,23 @@ def check_ibge(last_dates: dict[str, str], today: date) -> list[str]:
     return problems
 
 
+# EUA: a EFFR sai no dia útil seguinte; o CPI do mês M sai em meados de M+1.
+MAX_LAG_US_DAYS = {"effr": 7, "cpi": 80}
+
+
+def check_us(last_dates: dict[str, str], today: date) -> list[str]:
+    problems = []
+    for series, limit in MAX_LAG_US_DAYS.items():
+        d = last_dates.get(series)
+        if d is None:
+            problems.append(f"EUA {series}: sem nenhum dado")
+            continue
+        n = (today - date.fromisoformat(d)).days
+        if n > limit:
+            problems.append(f"EUA {series}: último dado em {d} ({n} dias; limite {limit})")
+    return problems
+
+
 def main() -> int:
     """`python -m pipeline.health`: falha (código 1) se houver dado desatualizado."""
     import sys
@@ -88,11 +105,12 @@ def main() -> int:
 
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8")
-    from . import ibge
+    from . import ibge, us
 
     with db.connect() as conn:
         db.initialize(conn)
-        problems = check(db.last_dates(conn), utc_today()) + check_ibge(ibge.last_dates(conn), utc_today())
+        today = utc_today()
+        problems = check(db.last_dates(conn), today) + check_ibge(ibge.last_dates(conn), today) + check_us(us.last_dates(conn), today)
     if problems:
         print("Saúde do pipeline: dados desatualizados", file=sys.stderr)
         for p in problems:

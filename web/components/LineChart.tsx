@@ -35,6 +35,9 @@ export function LineChart({
   baseline,
   heightClass,
   formatDate = formatShortDate,
+  band,
+  yAxis,
+  refLines,
 }: {
   series: ChartSeries[];
   height?: number;
@@ -47,6 +50,12 @@ export function LineChart({
   heightClass?: string;
   /** Rótulo da data no detalhe (padrão "12 nov"; séries mensais usam "set/26"). */
   formatDate?: (iso: string) => string;
+  /** Faixa horizontal de fundo (ex.: intervalo de tolerância da meta de inflação). */
+  band?: { low: number; high: number; label?: string };
+  /** Eixo vertical com valores (3–4 marcas e grade leve); recebe o formatador do valor. */
+  yAxis?: (v: number) => string;
+  /** Linhas de referência rotuladas no próprio gráfico (ex.: teto, centro e piso da meta). */
+  refLines?: { value: number; label: string }[];
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(342);
@@ -70,6 +79,8 @@ export function LineChart({
   const geo = useMemo(() => {
     const all = series.flatMap((s) => s.points.map((p) => p[1]));
     if (baseline !== undefined) all.push(baseline);
+    if (band) all.push(band.low, band.high);
+    refLines?.forEach((r) => all.push(r.value));
     if (all.length === 0) return null;
     let min = Math.min(...all);
     let max = Math.max(...all);
@@ -82,12 +93,22 @@ export function LineChart({
     max += pad;
     const top = 4;
     const bottom = height - 4;
+    // Marcas do eixo y em passos "redondos" (1, 2, 2,5, 5 × 10^n).
+    const ticks: number[] = [];
+    if (yAxis) {
+      const raw = (max - min) / 3;
+      const pow = 10 ** Math.floor(Math.log10(raw));
+      const step = [1, 2, 2.5, 5, 10].map((m) => m * pow).find((st) => st >= raw) ?? raw;
+      for (let v = Math.ceil(min / step) * step; v <= max; v += step) ticks.push(Number(v.toFixed(6)));
+    }
+    const left = yAxis ? 34 : 2;
+    const right = refLines?.length ? 62 : 2; // margem para os rótulos das linhas de referência
     // eixo x por índice de data comum (todas as séries compartilham o calendário mais longo)
     const longest = series.reduce((a, s) => (s.points.length > a.length ? s.points : a), series[0]?.points ?? []);
     const dates = longest.map((p) => p[0]);
     const xIndex = new Map(dates.map((d, i) => [d, i] as const));
     const n = Math.max(1, dates.length - 1);
-    const x = (d: string, fallbackIdx: number) => ((xIndex.get(d) ?? fallbackIdx) / n) * (w - 4) + 2;
+    const x = (d: string, fallbackIdx: number) => ((xIndex.get(d) ?? fallbackIdx) / n) * (w - left - right) + left;
     const y = (v: number) => bottom - ((v - min) / (max - min)) * (bottom - top);
     const paths = series.map((s) => {
       const pts = s.points.map((p, i) => [x(p[0], i), y(p[1])] as const);
@@ -95,8 +116,8 @@ export function LineChart({
       const area = pts.length ? `${line} L${pts[pts.length - 1][0].toFixed(1)},${height} L${pts[0][0].toFixed(1)},${height} Z` : "";
       return { s, pts, line, area };
     });
-    return { paths, dates, x, y };
-  }, [series, w, height, baseline]);
+    return { paths, dates, x, y, ticks, left, plotRight: w - right };
+  }, [series, w, height, baseline, band, yAxis, refLines]);
 
   if (!geo || geo.dates.length < 2) {
     return (
@@ -146,9 +167,35 @@ export function LineChart({
             />
           ) : null,
         )}
-        {baseline !== undefined && (
-          <line x1={0} x2={w} y1={geo.y(baseline)} y2={geo.y(baseline)} stroke="var(--line)" strokeWidth={1} strokeDasharray="3 4" />
+        {geo.ticks.map((t) => (
+          <g key={`t${t}`} aria-hidden="true">
+            <line x1={geo.left} x2={geo.plotRight} y1={geo.y(t)} y2={geo.y(t)} stroke="var(--line)" strokeWidth={1} />
+            <text x={geo.left - 6} y={geo.y(t) + 3.5} fontSize={10} textAnchor="end" fill="var(--muted)">
+              {yAxis!(t)}
+            </text>
+          </g>
+        ))}
+        {band && (
+          <rect
+            x={geo.left}
+            y={geo.y(band.high)}
+            width={geo.plotRight - geo.left}
+            height={Math.max(0, geo.y(band.low) - geo.y(band.high))}
+            fill="var(--pos-soft)"
+            opacity={0.7}
+          />
         )}
+        {baseline !== undefined && (
+          <line x1={0} x2={w} y1={geo.y(baseline)} y2={geo.y(baseline)} stroke="var(--muted)" strokeOpacity={0.55} strokeWidth={1} strokeDasharray="3 4" />
+        )}
+        {refLines?.map((r) => (
+          <g key={`r${r.value}`} aria-hidden="true">
+            <line x1={geo.left} x2={geo.plotRight} y1={geo.y(r.value)} y2={geo.y(r.value)} stroke="var(--muted)" strokeOpacity={0.6} strokeWidth={1} strokeDasharray="3 4" />
+            <text x={geo.plotRight + 6} y={geo.y(r.value) + 3.5} fontSize={10} fontWeight={600} textAnchor="start" fill="var(--muted)">
+              {r.label}
+            </text>
+          </g>
+        ))}
         {geo.paths.map(({ s, line }) => (
           <motion.path
             key={`${s.id}-${animKey}`}

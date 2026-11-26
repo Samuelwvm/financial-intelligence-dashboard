@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { Footer } from "@/components/Footer";
 import { AssetList, SeriesCard } from "@/components/Lists";
+import { RealRateCard } from "@/components/MacroViews";
 import { Pulse } from "@/components/Market";
 import { PageHeader } from "@/components/ui";
-import { getAsset, getSeries, getSummary } from "@/lib/data";
+import { getAsset, getMacro, getSeries, getSummary } from "@/lib/data";
 import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Mundo",
-  description: "Ações globais, dólar e euro contra o real, ouro, petróleo, S&P 500 e Dow Jones.",
+  description: "Ações globais, dólar e euro contra o real, juro real Brasil × EUA, ouro, petróleo, S&P 500 e Dow Jones.",
 };
 
 export default function MundoPage() {
@@ -26,7 +27,8 @@ export default function MundoPage() {
         <SeriesCard asset={getAsset("dolar")} series={getSeries("dolar")} heading="Dólar (USD/BRL)" i={5} />
         <SeriesCard asset={getAsset("euro")} series={getSeries("euro")} heading="Euro (EUR/BRL)" i={6} />
       </section>
-      <AssetList id="acoes-globais" title="Ações globais" assets={stocks} start={7} />
+      <RealRateCard data={getMacro().realRate} i={7} />
+      <AssetList id="acoes-globais" title="Ações globais" assets={stocks} start={8} />
       <AssetList id="commodities-indices" title="Commodities e índices" assets={others} start={8} />
       <Footer attribution />
     </>

@@ -75,7 +75,7 @@ def test_export_latest_month_groups_and_impact(conn):
     g = doc["ipca"]["groups"][0]
     assert g["impact"] == pytest.approx(g["weight"] * g["monthly"] / 100)
     u = doc["unemployment"]
-    assert u["date"] == "2026-09-01" and len(u["series"]) == 24
+    assert u["date"] == "2026-09-01" and len(u["series"]) == 25  # histórico completo
     # mesmo mês do ano anterior (set/2025 = m 21 na série sintética: 6,0 − 21 × 0,02)
     assert u["yearAgo"] == pytest.approx(6.0 - 21 * 0.02)
 

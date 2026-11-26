@@ -97,6 +97,7 @@ test.describe("movimento reduzido", () => {
   test("carrossel não anda sozinho com movimento reduzido", async ({ page }) => {
     await page.goto("/");
     const v = page.locator(".marquee-viewport");
+    await page.mouse.move(0, 0);
     const x0 = await v.evaluate((el) => el.scrollLeft);
     await page.waitForTimeout(1200);
     expect(await v.evaluate((el) => el.scrollLeft)).toBe(x0);
@@ -171,9 +172,10 @@ test("carrossel: anda sozinho e abre o ativo direto no toque/clique", async ({ p
   const viewport = page.locator(".marquee-viewport");
   await viewport.evaluate((el) => el.scrollIntoView({ block: "center" })); // longe da tab bar fixa
   const x = () => viewport.evaluate((el) => el.scrollLeft);
+  await page.mouse.move(0, 0); // mouse longe: em cima do carrossel ele pausa
   const x0 = await x();
-  await page.waitForTimeout(1500);
-  expect(await x()).toBeGreaterThan(x0);
+  // Sob carga o navegador desenha menos quadros: espera o movimento em vez de medir uma vez só.
+  await expect.poll(x, { timeout: 8000 }).toBeGreaterThan(x0);
   await viewport.click({ position: { x: 120, y: 40 }, force: true });
   await expect(page).toHaveURL(/\/ativo\//);
 });
@@ -192,8 +194,7 @@ test("carrossel: web pausa com o mouse e tem setas; celular arrasta e pausa", as
     await page.mouse.move(0, 0);
     const before = await x();
     await section.getByRole("button", { name: "Próximos ativos" }).click();
-    await page.waitForTimeout(900);
-    expect(Math.abs((await x()) - before)).toBeGreaterThan(300);
+    await expect.poll(async () => Math.abs((await x()) - before), { timeout: 8000 }).toBeGreaterThan(300);
     await expect(section).toContainText("Pausado por 20 s");
   } else {
     await expect(section.getByRole("button", { name: "Próximos ativos" })).toBeHidden();
@@ -261,4 +262,29 @@ test("Brasil: inflação por grupo (IBGE) alterna mês/12 meses e desemprego com
   const des = page.locator('section[aria-labelledby="desemprego"]');
   await expect(des).toContainText("PNAD Contínua");
   await expect(des.getByRole("img", { name: /desemprego/i })).toBeVisible();
+});
+
+test("Mundo: juro real Brasil × EUA com fontes e conta de Fisher", async ({ page }) => {
+  await page.goto("/mundo/");
+  const card = page.locator('section[aria-labelledby="juro-real"]');
+  await expect(card).toContainText("Juro real: Brasil × EUA");
+  await expect(card).toContainText(/Brasil · \w{3}\/\d{2}/);
+  await expect(card).toContainText("New York Fed");
+  await expect(card).toContainText("um dos fatores que influenciam o dólar, não o único");
+  await expect(card.getByRole("img", { name: /Juro real do Brasil e dos EUA/ })).toBeVisible();
+});
+
+test("Brasil: desemprego com filtro de período e inflação × meta", async ({ page }) => {
+  await page.goto("/brasil/");
+  const des = page.locator('section[aria-labelledby="desemprego"]');
+  const chart = des.getByRole("img", { name: /Taxa de desemprego/ });
+  await expect(chart).toHaveAttribute("aria-label", /2 anos/);
+  await des.getByRole("button", { name: "Desde 2012" }).click();
+  await expect(chart).toHaveAttribute("aria-label", /desde 2012/);
+  await expect(des).toContainText("Desde 2012, o maior valor foi");
+  const meta = page.locator('section[aria-labelledby="meta-inflacao"]');
+  await expect(meta).toContainText(/(acima do teto|abaixo do piso|dentro do intervalo) da meta/);
+  await expect(meta.getByRole("img", { name: /intervalo da meta/ })).toBeVisible();
+  await expect(meta).toContainText(/\d+º mês seguido (fora|dentro) do intervalo/);
+  await expect(meta).toContainText("Decreto 12.079/2024");
 });

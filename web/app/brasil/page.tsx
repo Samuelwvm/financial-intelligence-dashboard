@@ -4,7 +4,7 @@ import { IbgeView } from "@/components/IbgeView";
 import { AssetList, SeriesCard } from "@/components/Lists";
 import { MacroCards } from "@/components/Market";
 import { PageHeader } from "@/components/ui";
-import { getAsset, getIbge, getSeries, getSummary } from "@/lib/data";
+import { getAsset, getIbge, getMacro, getSeries, getSummary } from "@/lib/data";
 import { formatDate } from "@/lib/format";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function BrasilPage() {
       <PageHeader title="Brasil" subtitle={`Ações da B3 e Ibovespa · dados de ${formatDate(ibov.lastDate)}`} />
       <SeriesCard asset={ibov} series={getSeries("ibovespa")} heading="Ibovespa" />
       <AssetList id="acoes-b3" title="Ações da B3" assets={stocks} start={1} />
-      <IbgeView data={getIbge()} start={7}>
+      <IbgeView data={getIbge()} target={getMacro().inflationTarget} start={7}>
         <div className="flex gap-2 px-5 lg:gap-4 lg:px-0" aria-label="Juros e inflação">
           <MacroCards macro={s.macro} start={4} />
         </div>

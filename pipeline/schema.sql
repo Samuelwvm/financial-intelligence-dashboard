@@ -37,3 +37,12 @@ CREATE TABLE IF NOT EXISTS ibge_series (
     value REAL NOT NULL,
     PRIMARY KEY (series, date)
 );
+
+-- Séries dos EUA (fontes oficiais, sem chave): 'effr' (New York Fed, diária) e
+-- 'cpi' (BLS, CPI-U sem ajuste sazonal, mensal; date = 1º dia do mês).
+CREATE TABLE IF NOT EXISTS us_series (
+    date TEXT NOT NULL,
+    series TEXT NOT NULL,
+    value REAL NOT NULL,
+    PRIMARY KEY (series, date)
+);

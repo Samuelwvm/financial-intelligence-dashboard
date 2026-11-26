@@ -103,3 +103,24 @@ export const ibgeSchema = z.object({
   }),
 });
 export type Ibge = z.infer<typeof ibgeSchema>;
+
+// macro.json: juro real Brasil × EUA e inflação × meta.
+const rateBlock = z.object({ month: isoDate, nominal: finite, inflation: finite, real: finite });
+export const macroSchema = z.object({
+  realRate: z.object({
+    br: rateBlock,
+    us: rateBlock,
+    series: z.array(z.tuple([isoDate, finite.nullable(), finite.nullable()])).min(12),
+    usGaps: z.array(isoDate),
+    sources: z.string(),
+  }),
+  inflationTarget: z.object({
+    center: finite,
+    lower: finite,
+    upper: finite,
+    source: z.string(),
+    series: z.array(z.tuple([isoDate, finite])).min(12),
+    latest: z.object({ month: isoDate, value: finite }),
+  }),
+});
+export type Macro = z.infer<typeof macroSchema>;

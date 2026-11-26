@@ -3,7 +3,8 @@
 import { useReducedMotion, motion } from "motion/react";
 import { useState } from "react";
 import { formatMonthShort, formatMonthYear, formatPct, formatPp, formatRollingQuarter, formatSignedPct } from "@/lib/format";
-import type { Ibge } from "@/lib/schema";
+import type { Ibge, Macro } from "@/lib/schema";
+import { InflationTargetCard } from "./MacroViews";
 import { LineChart } from "./LineChart";
 import { Card } from "./ui";
 
@@ -13,7 +14,17 @@ type Mode = "monthly" | "yoy";
  * Economia brasileira (IBGE · SIDRA): inflação por grupo e desemprego.
  * Só descreve o dado publicado — sem projeção nem relação de causa.
  */
-export function IbgeView({ data, start = 0, children }: { data: Ibge; start?: number; children?: React.ReactNode }) {
+export function IbgeView({
+  data,
+  target,
+  start = 0,
+  children,
+}: {
+  data: Ibge;
+  target: Macro["inflationTarget"];
+  start?: number;
+  children?: React.ReactNode;
+}) {
   return (
     <section aria-labelledby="economia-br" className="flex flex-col gap-3 lg:gap-4">
       <div className="px-5 lg:px-0">
@@ -23,15 +34,18 @@ export function IbgeView({ data, start = 0, children }: { data: Ibge; start?: nu
         <p className="text-[12px] text-muted">Juros (Banco Central), inflação e desemprego (IBGE) · dados oficiais</p>
       </div>
       {children}
-      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start lg:gap-4">
-        <InflationByGroup data={data} i={start} />
-        <Unemployment data={data} i={start + 1} />
+      {/* Resumo → detalhe. Web: [meta | desemprego] em cima e "por grupo" na largura toda.
+          Celular: meta, por grupo (os dois de inflação juntos) e desemprego. */}
+      <div className="flex flex-col gap-3 lg:grid lg:grid-cols-2 lg:gap-4">
+        <InflationTargetCard data={target} i={start} className="order-1 lg:order-none lg:col-start-1 lg:row-start-1" />
+        <InflationByGroup data={data} i={start + 1} className="order-2 lg:order-none lg:col-span-2 lg:row-start-2" />
+        <Unemployment data={data} i={start + 2} className="order-3 lg:order-none lg:col-start-2 lg:row-start-1" />
       </div>
     </section>
   );
 }
 
-function InflationByGroup({ data, i }: { data: Ibge; i: number }) {
+function InflationByGroup({ data, i, className = "" }: { data: Ibge; i: number; className?: string }) {
   const [mode, setMode] = useState<Mode>("yoy");
   const reduce = useReducedMotion();
   const { month, general, groups } = data.ipca;
@@ -95,7 +109,7 @@ function InflationByGroup({ data, i }: { data: Ibge; i: number }) {
   };
 
   return (
-    <Card i={i} className="mx-5 lg:mx-0" aria-labelledby="ipca-grupos">
+    <Card i={i} className={`mx-5 lg:mx-0 ${className}`} aria-labelledby="ipca-grupos">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 id="ipca-grupos" className="text-[15px] font-bold">
@@ -128,7 +142,7 @@ function InflationByGroup({ data, i }: { data: Ibge; i: number }) {
         <span className="num font-display text-[18px] font-semibold">{formatSignedPct(general[mode], 2)}</span>
       </div>
 
-      <ul className="mt-3 flex flex-col gap-2.5" aria-label={`Variação por grupo, ${mode === "monthly" ? "no mês" : "em 12 meses"}`}>
+      <ul className="mt-3 flex flex-col gap-2.5 lg:grid lg:grid-flow-col lg:grid-cols-2 lg:grid-rows-5 lg:gap-x-10" aria-label={`Variação por grupo, ${mode === "monthly" ? "no mês" : "em 12 meses"}`}>
         {sorted.map((g) => (
           // Celular: nome e valor na 1ª linha, barra com a largura toda embaixo. Web: 3 colunas.
           <li
@@ -150,16 +164,43 @@ function InflationByGroup({ data, i }: { data: Ibge; i: number }) {
   );
 }
 
-function Unemployment({ data, i }: { data: Ibge; i: number }) {
+const UNEMP_PERIODS = [
+  { id: "2a", label: "2 anos", months: 24 },
+  { id: "5a", label: "5 anos", months: 60 },
+  { id: "all", label: "Desde 2012", months: Infinity },
+] as const;
+
+function Unemployment({ data, i, className = "" }: { data: Ibge; i: number; className?: string }) {
   const u = data.unemployment;
+  const [period, setPeriod] = useState<(typeof UNEMP_PERIODS)[number]["id"]>("2a");
   const diff = u.yearAgo === null ? null : u.value - u.yearAgo;
-  const points = u.series as [string, number][];
+  const all = u.series as [string, number][];
+  const n = UNEMP_PERIODS.find((p) => p.id === period)!.months;
+  const points = Number.isFinite(n) ? all.slice(-n) : all;
+  const label = UNEMP_PERIODS.find((p) => p.id === period)!.label.toLowerCase();
   return (
-    <Card i={i} className="mx-5 lg:mx-0" aria-labelledby="desemprego">
-      <h3 id="desemprego" className="text-[15px] font-bold">
-        Desemprego
-      </h3>
-      <p className="text-[12px] text-muted">PNAD Contínua · trimestre {formatRollingQuarter(u.date)} · Fonte: IBGE</p>
+    <Card i={i} className={`mx-5 lg:mx-0 ${className}`} aria-labelledby="desemprego">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h3 id="desemprego" className="text-[15px] font-bold">
+            Desemprego
+          </h3>
+          <p className="text-[12px] text-muted">PNAD Contínua · trimestre {formatRollingQuarter(u.date)} · Fonte: IBGE</p>
+        </div>
+        <div role="group" aria-label="Período do desemprego" className="flex rounded-[10px] bg-soft p-0.5">
+          {UNEMP_PERIODS.map((p) => (
+            <button
+              key={p.id}
+              type="button"
+              aria-pressed={period === p.id}
+              onClick={() => setPeriod(p.id)}
+              className={`min-h-9 rounded-[8px] px-2.5 text-[13px] font-semibold transition-colors ${period === p.id ? "bg-fg text-inverse-fg" : "text-fg hover:bg-line"}`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <span className="num font-display text-[30px] font-semibold">{formatPct(u.value, 1)}</span>
         {diff !== null && (
@@ -174,14 +215,26 @@ function Unemployment({ data, i }: { data: Ibge; i: number }) {
           series={[{ id: "desocupacao", label: "Desemprego", points, tone: "fg" }]}
           height={130}
           heightClass="h-[130px] lg:h-[180px]"
-          label="Taxa de desemprego nos últimos 24 meses"
+          label={`Taxa de desemprego, ${period === "all" ? "desde 2012" : `últimos ${label}`}`}
+          animKey={period}
           description={`De ${formatPct(points[0][1], 1)} (${formatMonthShort(points[0][0])}) para ${formatPct(u.value, 1)} (${formatMonthShort(u.date)}).`}
           formatValue={(v) => formatPct(v, 1)}
           formatDate={formatMonthShort}
+          yAxis={(v) => formatPct(v, Number.isInteger(v) ? 0 : 1)}
         />
       </div>
       <p className="mt-2 text-[12px] leading-snug text-muted">
         Percentual de pessoas de 14 anos ou mais que procuraram trabalho e não encontraram. Cada ponto é a média de três meses.
+        {period === "all" && (() => {
+          const max = all.reduce((a, b) => (b[1] > a[1] ? b : a));
+          const min = all.reduce((a, b) => (b[1] < a[1] ? b : a));
+          return (
+            <>
+              {" "}
+              Desde 2012, o maior valor foi {formatPct(max[1], 1)} ({formatMonthShort(max[0])}) e o menor, {formatPct(min[1], 1)} ({formatMonthShort(min[0])}).
+            </>
+          );
+        })()}
       </p>
     </Card>
   );

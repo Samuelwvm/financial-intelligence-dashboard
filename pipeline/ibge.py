@@ -38,7 +38,7 @@ UNEMPLOYMENT_SERIES = "desocupacao"
 IPCA_URL = (
     f"{BASE}/t/{IPCA_TABLE}/n1/all/v/{','.join(IPCA_VARS)}/p/last%2013/c315/{','.join(IPCA_GROUPS)}"
 )
-UNEMPLOYMENT_URL = f"{BASE}/t/{UNEMPLOYMENT_TABLE}/n1/all/v/{UNEMPLOYMENT_VAR}/p/last%2036"
+UNEMPLOYMENT_URL = f"{BASE}/t/{UNEMPLOYMENT_TABLE}/n1/all/v/{UNEMPLOYMENT_VAR}/p/all"  # desde 2012
 
 
 def _period_to_date(code: str) -> str:
@@ -153,6 +153,6 @@ def build_export(conn: sqlite3.Connection) -> dict:
             "date": last_date,  # último mês do trimestre móvel
             "value": last_value,
             "yearAgo": year_ago,
-            "series": [[d, v] for d, v in unemp[-24:]],
+            "series": [[d, v] for d, v in unemp],  # histórico completo; a tela filtra o período
         },
     }
