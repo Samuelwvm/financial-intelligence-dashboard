@@ -38,11 +38,15 @@ CREATE TABLE IF NOT EXISTS ibge_series (
     PRIMARY KEY (series, date)
 );
 
--- Séries dos EUA (fontes oficiais, sem chave): 'effr' (New York Fed, diária) e
--- 'cpi' (BLS, CPI-U sem ajuste sazonal, mensal; date = 1º dia do mês).
-CREATE TABLE IF NOT EXISTS us_series (
+-- Juro real no mundo — BIS (Banco de Compensações Internacionais), sem chave:
+-- series = 'policy:<país>' (taxa básica, fim do mês) ou 'cpi:<país>' (inflação ao consumidor,
+-- variação em 12 meses); date = 1º dia do mês. País no código ISO do BIS (BR, US, XM = Zona do Euro…).
+CREATE TABLE IF NOT EXISTS bis_series (
     date TEXT NOT NULL,
     series TEXT NOT NULL,
     value REAL NOT NULL,
     PRIMARY KEY (series, date)
 );
+
+-- A tabela dos EUA (New York Fed + BLS) foi substituída pelo BIS, que cobre os EUA também.
+DROP TABLE IF EXISTS us_series;

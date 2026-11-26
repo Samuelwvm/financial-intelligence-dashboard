@@ -30,10 +30,11 @@ describe.skipIf(!has)("JSON gerados pelo pipeline", () => {
   it("macro.json: juro real pela conta de Fisher e meta coerente", () => {
     const m = macroSchema.parse(read("macro.json"));
     const fisher = (i: number, p: number) => ((1 + i / 100) / (1 + p / 100) - 1) * 100;
-    for (const k of ["br", "us"] as const) {
-      const r = m.realRate[k];
-      expect(r.real).toBeCloseTo(fisher(r.nominal, r.inflation), 3);
-    }
+    const reais = m.realRate.ranking.map((r) => r.real);
+    for (const r of m.realRate.ranking) expect(r.real).toBeCloseTo(fisher(r.policy, r.inflation), 3);
+    expect(reais).toEqual([...reais].sort((a, b) => b - a)); // ranking do maior para o menor
+    expect(Object.keys(m.realRate.series)).toHaveLength(10);
+    expect(m.realRate.series.BR.at(-1)![0]).toBe(m.realRate.month); // ranking e série no mesmo mês
     const t = m.inflationTarget;
     expect(t.lower).toBeLessThan(t.center);
     expect(t.center).toBeLessThan(t.upper);

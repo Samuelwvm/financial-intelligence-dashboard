@@ -79,20 +79,24 @@ def check_ibge(last_dates: dict[str, str], today: date) -> list[str]:
     return problems
 
 
-# EUA: a EFFR sai no dia útil seguinte; o CPI do mês M sai em meados de M+1.
-MAX_LAG_US_DAYS = {"effr": 7, "cpi": 80}
+# BIS: a taxa básica do mês M sai no início de M+1; a inflação chega com ~1 mês de atraso
+# em relação às fontes nacionais (o CPI de M costuma aparecer perto do fim de M+1 ou em M+2).
+MAX_LAG_BIS_DAYS = {"policy": 100, "cpi": 120}  # a Índia costuma chegar ~1 mês depois dos demais
 
 
-def check_us(last_dates: dict[str, str], today: date) -> list[str]:
+def check_bis(last_dates: dict[str, str], today: date) -> list[str]:
+    from .bis import COUNTRIES
+
     problems = []
-    for series, limit in MAX_LAG_US_DAYS.items():
-        d = last_dates.get(series)
-        if d is None:
-            problems.append(f"EUA {series}: sem nenhum dado")
-            continue
-        n = (today - date.fromisoformat(d)).days
-        if n > limit:
-            problems.append(f"EUA {series}: último dado em {d} ({n} dias; limite {limit})")
+    for kind, limit in MAX_LAG_BIS_DAYS.items():
+        for country in COUNTRIES:
+            d = last_dates.get(f"{kind}:{country}")
+            if d is None:
+                problems.append(f"BIS {kind}:{country}: sem nenhum dado")
+                continue
+            n = (today - date.fromisoformat(d)).days
+            if n > limit:
+                problems.append(f"BIS {kind}:{country}: último dado em {d} ({n} dias; limite {limit})")
     return problems
 
 
@@ -105,12 +109,12 @@ def main() -> int:
 
     for stream in (sys.stdout, sys.stderr):
         stream.reconfigure(encoding="utf-8")
-    from . import ibge, us
+    from . import bis, ibge
 
     with db.connect() as conn:
         db.initialize(conn)
         today = utc_today()
-        problems = check(db.last_dates(conn), today) + check_ibge(ibge.last_dates(conn), today) + check_us(us.last_dates(conn), today)
+        problems = check(db.last_dates(conn), today) + check_ibge(ibge.last_dates(conn), today) + check_bis(bis.last_dates(conn), today)
     if problems:
         print("Saúde do pipeline: dados desatualizados", file=sys.stderr)
         for p in problems:

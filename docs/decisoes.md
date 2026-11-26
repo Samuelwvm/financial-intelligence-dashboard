@@ -81,7 +81,7 @@ Formato: **decisão** · motivo · alternativas consideradas.
     - **Deploy:** o workflow passa a coletar também em `push` e no CI (antes só reexportava). Assim, uma fonte nova tem dados já no primeiro deploy, sem esperar a coleta noturna.
     - **Celular:** a barra fica numa linha própria, com a largura toda, embaixo do nome; na web, em três colunas.
 
-39. **Juro real Brasil × EUA (tela Mundo)**, ex-post, mensal, 24 meses, pela conta de Fisher `(1 + juro) ÷ (1 + inflação) − 1`:
+39. **[SUBSTITUÍDO — ver §45] Juro real Brasil × EUA (tela Mundo)**, ex-post, mensal, 24 meses, pela conta de Fisher `(1 + juro) ÷ (1 + inflação) − 1`:
     - **Brasil:** SELIC meta vigente no último dia do mês (BCB 432) e IPCA 12 meses (BCB 13522).
     - **EUA (fontes oficiais sem chave):** EFFR do **New York Fed** (Markets API) e CPI-U sem ajuste sazonal (CUUR0000SA0) da **BLS API v1**. O CPI 12 meses só é calculado quando o mês e o mesmo mês do ano anterior existem: a BLS não publicou outubro/2025, então out/2025 e out/2026 ficam sem ponto e o card diz isso. A referência mais recente dos EUA fica um mês atrás da do Brasil.
     - Recusados: a API do FRED (exige chave), o `fredgraph.csv` (não documentado) e o DBnomics (agregador com atraso).
@@ -97,6 +97,14 @@ Formato: **decisão** · motivo · alternativas consideradas.
 43. **Teste do carrossel estável:** o teste esperava 1,5 s e media uma vez; sob carga o navegador desenha menos quadros e ele falhava de vez em quando. Agora espera o movimento (até 8 s) com o mouse longe do carrossel. Passou 40 de 40 vezes com 8 testes em paralelo.
 
 44. **Inflação por grupo em uma coluna e com barras em verde leve no modo claro.** A lista é um ranking e deve ser lida de cima para baixo (duas colunas quebravam a ordem); na web, o resumo e a explicação de *peso* ficam ao lado. As barras usam `--bar-ipca`: verde suave no claro (pedido do dono do projeto) e neutro no escuro. O verde é deliberadamente fraco, para não sugerir "inflação subindo = bom".
+
+45. **Juro real no mundo (tela Mundo), fonte única BIS.** O card Brasil × EUA virou um card dedicado ao comparativo internacional:
+    - **Ranking** do juro real de 10 países no **mesmo mês** (o mais recente que todos têm), com o Brasil destacado, e **Brasil × país escolhido** em 24 meses (chips; EUA por padrão). Linhas só de dois países por vez, para não virar emaranhado.
+    - **Fonte única:** BIS (Banco de Compensações Internacionais), API SDMX pública e sem chave. `WS_CBPOL` traz a taxa básica (mensal, fim do mês) e `WS_LONG_CPI` (medida 771) a inflação em 12 meses. Mesma frequência e metodologia para todos. Conferido: Brasil set/26 = 4,58% (igual ao IBGE) e EUA = 3,74% (igual à BLS).
+    - **Removidos:** o New York Fed (EFFR) e a BLS (CPI) passaram a ser redundantes. Saíram `pipeline/us.py`, a tabela `us_series` (`DROP TABLE IF EXISTS` no schema), a saúde dos EUA e os testes deles. Duas fontes a menos para falhar.
+    - **Cuidados explicados no próprio card ("Sobre os dados"):** o BIS publica cerca de 1 mês depois das fontes nacionais (aqui o Brasil aparece em set/26, enquanto os dados do Banco Central na tela Brasil vão até out/26); "juro básico" é a taxa de política monetária que o BIS registra para cada banco central, que não funciona igual em todos os países; meses sem dado são listados a partir dos próprios dados (hoje: EUA out/25 — o BIS também não tem esse CPI); critério de escolha dos países.
+    - **Países:** grandes economias (EUA, Zona do Euro, Reino Unido, Japão), BRICS (China, Índia, África do Sul) e vizinhos (México, Chile). Constante `COUNTRIES` em `pipeline/bis.py`.
+    - **Saúde:** taxa básica com no máximo 100 dias (a Índia costuma chegar ~1 mês depois dos demais) e inflação com no máximo 120, por país. O export falha se faltar algum dos 10 países.
 
 ## Adaptações em relação ao mockup
 

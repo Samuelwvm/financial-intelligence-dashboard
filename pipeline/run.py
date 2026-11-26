@@ -18,7 +18,7 @@ import time
 
 import pandas as pd
 
-from . import db, export, health, ibge, us
+from . import bis, db, export, health, ibge
 from .assets import ASSETS, INDICATORS
 from datetime import timedelta
 
@@ -57,13 +57,15 @@ def collect(conn, today) -> CollectResult:
         except Exception as exc:  # noqa: BLE001
             result.failed[name] = str(exc)
 
-    us_rows: list[tuple[str, str, float]] = []
+    # Juro real no mundo: BIS (taxas básicas e inflação de 10 países), 3 anos de janela.
+    bis_start = today.replace(year=today.year - 3, day=1)
+    bis_rows: list[tuple[str, str, float]] = []
     for name, fn in (
-        ("EUA:EFFR", lambda: us.fetch_effr(macro_start, today)),
-        ("EUA:CPI", lambda: us.fetch_cpi(today.year - 3, today.year)),
+        ("BIS:taxas-basicas", lambda: bis.fetch_policy(bis_start)),
+        ("BIS:inflacao", lambda: bis.fetch_cpi(bis_start)),
     ):
         try:
-            us_rows += with_retry(fn, name)
+            bis_rows += with_retry(fn, name)
         except Exception as exc:  # noqa: BLE001
             result.failed[name] = str(exc)
 
@@ -75,8 +77,8 @@ def collect(conn, today) -> CollectResult:
         result.ok[symbol] = db.upsert_prices(conn, symbol, rows)
     if ibge_rows:
         result.ok["IBGE"] = ibge.upsert(conn, ibge_rows)
-    if us_rows:
-        result.ok["EUA"] = us.upsert(conn, us_rows)
+    if bis_rows:
+        result.ok["BIS"] = bis.upsert(conn, bis_rows)
     return result
 
 
@@ -143,10 +145,10 @@ def main(argv: list[str] | None = None) -> int:
         conn.execute("ANALYZE")
         last = db.last_dates(conn)
         last_ibge = ibge.last_dates(conn)
-        last_us = us.last_dates(conn)
+        last_bis = bis.last_dates(conn)
     print(f"Limpeza: {removed} registro(s) com mais de {KEEP_DAYS} dias removido(s)")
 
-    problems = health.check(last, today) + health.check_ibge(last_ibge, today) + health.check_us(last_us, today)
+    problems = health.check(last, today) + health.check_ibge(last_ibge, today) + health.check_bis(last_bis, today)
     status = "Sucesso"
     if problems:
         print("Saúde do pipeline: PROBLEMAS", file=sys.stderr)

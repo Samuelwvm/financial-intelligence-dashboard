@@ -1,58 +1,50 @@
-"""Juro real Brasil × EUA e inflação × meta (macro.json) + parse das fontes dos EUA."""
+"""Juro real no mundo (BIS) e inflação × meta (macro.json)."""
 
 import pytest
 
-from pipeline import macro, us
+from pipeline import bis, macro
 
 
 def test_fisher_matches_known_values():
-    # números de 24/11/2026: SELIC 13,75% e IPCA 12m 4,63%; EFFR 3,88% e CPI 12m 3,74%
-    assert macro.fisher(13.75, 4.63) == pytest.approx(8.716, abs=1e-3)
-    assert macro.fisher(3.88, 3.74) == pytest.approx(0.135, abs=1e-3)
+    # BIS set/2026: Brasil 13,75% e 4,576%; EUA 3,875% e 3,738%
+    assert macro.fisher(13.75, 4.576) == pytest.approx(8.772, abs=1e-3)
+    assert macro.fisher(3.875, 3.738) == pytest.approx(0.132, abs=1e-3)
     assert macro.fisher(10, 0) == pytest.approx(10)
 
 
-def test_month_helpers():
-    assert macro.month_end("2026-02-01") == "2026-02-28"
+def test_shift_months():
     assert macro.shift_months("2026-01-01", -12) == "2025-01-01"
     assert macro.shift_months("2026-01-01", -1) == "2025-12-01"
-    s = [("2026-09-10", 13.75), ("2026-09-20", 14.0)]
-    assert macro.value_at_or_before(s, "2026-09-30") == 14.0
-    assert macro.value_at_or_before(s, "2026-09-15") == 13.75
-    assert macro.value_at_or_before(s, "2026-09-01") is None
-
-
-def test_cpi_12m_requires_both_months():
-    cpi = {"2025-09-01": 100.0, "2026-09-01": 103.74, "2026-10-01": 104.0}  # out/2025 ausente
-    assert macro.cpi_12m(cpi, "2026-09-01") == pytest.approx(3.74)
-    assert macro.cpi_12m(cpi, "2026-10-01") is None
 
 
 def months(start: str, n: int) -> list[str]:
     return [macro.shift_months(start, k) for k in range(n)]
 
 
-def test_real_rates_latest_and_us_gap():
-    ms = months("2024-11-01", 24)  # nov/2024 … out/2026
-    selic = [(macro.month_end(m), 13.75) for m in ms]
-    ipca12 = [(m, 4.63) for m in ms]
-    effr = [(macro.month_end(m), 3.88) for m in ms]
-    cpi = {m: 100 * 1.0374 ** (k / 12) for k, m in enumerate(months("2023-11-01", 36))}
-    cpi.pop("2025-10-01")  # a BLS não publicou out/2025
-    out = macro.real_rates(selic, ipca12, effr, cpi)
-    assert out["br"]["month"] == "2026-10-01" and out["br"]["real"] == pytest.approx(8.716, abs=1e-3)
-    assert out["us"]["month"] == "2026-09-01"  # out/2026 sem CPI 12m (base out/2025 ausente)
-    assert "2025-10-01" in out["usGaps"] and "2026-10-01" in out["usGaps"]
-    row = dict((m, (br, u)) for m, br, u in out["series"])
-    assert row["2026-10-01"][1] is None and row["2026-10-01"][0] is not None
-    assert len(out["series"]) == 24
+def full(value_policy=5.0, value_cpi=3.0, n=30, start="2024-04-01"):
+    ms = months(start, n)
+    policy = {c: {m: value_policy for m in ms} for c in bis.COUNTRIES}
+    cpi = {c: {m: value_cpi for m in ms} for c in bis.COUNTRIES}
+    return policy, cpi
 
 
-def test_real_rates_uses_rate_in_force_at_month_end():
-    # SELIC cortada no meio do mês: vale a taxa vigente no último dia
-    selic = [("2026-09-01", 15.0), ("2026-09-17", 14.25)]
-    out = macro.real_rates(selic, [("2026-09-01", 5.0)], [("2026-09-30", 4.0)], {"2025-09-01": 100.0, "2026-09-01": 103.0}, months=1)
-    assert out["br"]["nominal"] == 14.25
+def test_world_ranking_uses_latest_common_month_and_sorts():
+    policy, cpi = full()
+    policy["BR"] = {m: 13.75 for m in policy["BR"]}
+    policy["IN"].pop("2026-09-01")  # a Índia ainda não tem a taxa de set/26
+    out = macro.world_real_rates(policy, cpi)
+    assert out["month"] == "2026-08-01"  # último mês que TODOS têm
+    assert out["ranking"][0]["code"] == "BR"
+    reals = [r["real"] for r in out["ranking"]]
+    assert reals == sorted(reals, reverse=True)
+    assert len(out["series"]["US"]) == 24 and out["series"]["US"][-1][0] == "2026-08-01"
+
+
+def test_world_requires_every_country():
+    policy, cpi = full()
+    del policy["CL"]
+    with pytest.raises(RuntimeError, match="CL"):
+        macro.world_real_rates(policy, cpi)
 
 
 def test_inflation_target():
@@ -64,14 +56,23 @@ def test_inflation_target():
         macro.inflation_target(s[:5])
 
 
-def test_parse_us_sources():
-    effr = {"refRates": [{"effectiveDate": "2026-11-24", "type": "EFFR", "percentRate": 3.88}, {"effectiveDate": "x", "type": "OBFR", "percentRate": 3.8}]}
-    assert us.parse_effr(effr) == [("2026-11-24", "effr", 3.88)]
-    bls = {"status": "REQUEST_SUCCEEDED", "Results": {"series": [{"data": [
-        {"year": "2026", "period": "M10", "value": "337.511"},
-        {"year": "2025", "period": "M10", "value": "-"},
-        {"year": "2025", "period": "M13", "value": "330.0"},
-    ]}]}}
-    assert us.parse_cpi(bls) == [("2026-10-01", "cpi", 337.511)]
+def test_parse_bis_csv():
+    text = (
+        "FREQ,REF_AREA,TIME_PERIOD,OBS_VALUE\n"
+        "M,BR,2026-09,13.75\n"
+        "M,US,2026-09,3.875\n"
+        "M,XX,2026-09,1.0\n"  # país fora da lista
+        "M,MX,2026-09,\n"  # sem valor
+        "M,JP,2026-09,NaN\n"
+    )
+    assert bis.parse_csv(text, "policy") == [("2026-09-01", "policy:BR", 13.75), ("2026-09-01", "policy:US", 3.875)]
     with pytest.raises(ValueError):
-        us.parse_cpi({"status": "REQUEST_NOT_PROCESSED"})
+        bis.parse_csv("a,b\n1,2\n", "cpi")
+
+
+def test_bis_urls_cover_all_countries():
+    from datetime import date
+
+    url = bis.cpi_url(date(2023, 11, 1))
+    assert "WS_LONG_CPI" in url and url.count("+") == len(bis.COUNTRIES) - 1 and ".771/" in url
+    assert "startPeriod=2023-11" in url

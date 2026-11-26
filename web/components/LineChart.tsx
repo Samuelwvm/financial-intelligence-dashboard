@@ -186,7 +186,7 @@ export function LineChart({
           />
         )}
         {baseline !== undefined && (
-          <line x1={0} x2={w} y1={geo.y(baseline)} y2={geo.y(baseline)} stroke="var(--muted)" strokeOpacity={0.55} strokeWidth={1} strokeDasharray="3 4" />
+          <line x1={geo.left} x2={geo.plotRight} y1={geo.y(baseline)} y2={geo.y(baseline)} stroke="var(--muted)" strokeOpacity={0.55} strokeWidth={1} strokeDasharray="3 4" />
         )}
         {refLines?.map((r) => (
           <g key={`r${r.value}`} aria-hidden="true">
