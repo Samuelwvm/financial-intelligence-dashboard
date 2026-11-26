@@ -7,6 +7,7 @@ import { cache } from "react";
 import type { z } from "zod";
 import {
   glossarySchema,
+  ibgeSchema,
   portfolioSchema,
   seriesSchema,
   summarySchema,
@@ -58,6 +59,7 @@ export const getSummary = cache(() => {
 export const getSeries = cache((slug: string) => load(`series/${slug}.json`, seriesSchema));
 export const getPortfolio = cache((period: Period) => load(`portfolio/${period}.json`, portfolioSchema));
 export const getGlossary = cache(() => load("glossary.json", glossarySchema));
+export const getIbge = cache(() => load("ibge.json", ibgeSchema));
 
 export function getAsset(slug: string) {
   const a = getSummary().assets.find((x) => x.slug === slug);

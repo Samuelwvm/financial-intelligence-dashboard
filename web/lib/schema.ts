@@ -78,3 +78,28 @@ export const glossarySchema = z.object({
     .min(20),
 });
 export type Glossary = z.infer<typeof glossarySchema>;
+
+// IBGE · SIDRA (ibge.json): IPCA por grupo e desemprego (PNAD Contínua).
+const ibgeGroup = z.object({
+  code: z.string(),
+  name: z.string(),
+  monthly: finite,
+  weight: finite.nonnegative(),
+  yoy: finite,
+  impact: finite,
+});
+export const ibgeSchema = z.object({
+  source: z.string(),
+  ipca: z.object({
+    month: isoDate,
+    general: z.object({ monthly: finite, yoy: finite }),
+    groups: z.array(ibgeGroup).length(9),
+  }),
+  unemployment: z.object({
+    date: isoDate,
+    value: finite.nonnegative(),
+    yearAgo: finite.nullable(),
+    series: z.array(z.tuple([isoDate, finite])).min(12),
+  }),
+});
+export type Ibge = z.infer<typeof ibgeSchema>;

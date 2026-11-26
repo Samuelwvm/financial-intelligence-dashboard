@@ -34,6 +34,7 @@ export function LineChart({
   formatValue,
   baseline,
   heightClass,
+  formatDate = formatShortDate,
 }: {
   series: ChartSeries[];
   height?: number;
@@ -44,6 +45,8 @@ export function LineChart({
   baseline?: number;
   /** Altura responsiva via CSS (ex.: "h-[130px] lg:h-[260px]"); medida e aplicada ao viewBox. */
   heightClass?: string;
+  /** Rótulo da data no detalhe (padrão "12 nov"; séries mensais usam "set/26"). */
+  formatDate?: (iso: string) => string;
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(342);
@@ -178,7 +181,7 @@ export function LineChart({
           className="pointer-events-none absolute -top-2 z-10 whitespace-nowrap rounded-lg border border-line bg-card px-2 py-1 text-[12px] shadow-sm"
           style={{ left: Math.min(Math.max(hx, 60), w - 60), transform: "translate(-50%, -100%)" }}
         >
-          <div className="font-semibold text-muted">{formatShortDate(hd)}</div>
+          <div className="font-semibold text-muted">{formatDate(hd)}</div>
           {series.map((s) => {
             const p = s.points.find((q) => q[0] === hd);
             return p ? (

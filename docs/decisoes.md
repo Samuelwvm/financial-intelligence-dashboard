@@ -72,6 +72,15 @@ Formato: **decisão** · motivo · alternativas consideradas.
 
     No período padrão elas viravam linhas retas no topo, puro ruído visual. O código ficou comentado com a marcação `FEATURE DESATIVADA` (`web/components/Portfolio.tsx`, `web/lib/portfolio.ts`, `web/app/globals.css`, `pipeline/export.py` e os testes de contrato e e2e). As funções `cdi_index`/`ipca_index` continuam em `pipeline/metrics.py`, com testes ativos. Se um dia fizer sentido, as alternativas são: mostrar só no período de 1 ano, ou como número ("o CDI rendeu +1,1% no mesmo período") em vez de linha. A correção do §36 (IPCA negativo) continua ativa, porque é um bug independente.
 
+38. **IBGE · SIDRA na tela Brasil** (API pública, sem chave): *inflação por grupo* (tabela 7060: variação no mês, peso e acumulado em 12 meses do índice geral e dos 9 grupos) e *desemprego* (tabela 6381: taxa de desocupação da PNAD Contínua, trimestre móvel, 24 meses).
+    - **Tabela própria `ibge_series (series, date, value)`**, separada da tabela de preços, com upsert por `(series, date)`: idempotente e corrige revisões do IBGE. Cada coleta busca uma janela (13 meses do IPCA, 36 trimestres do desemprego), então a carga é incremental por natureza.
+    - **Parse do formato do SIDRA:** o 1º item da resposta é o cabeçalho; os valores ausentes ou sigilosos ("...", "-", "X") são descartados; o período vem em `D3C` (`202610`) e vira a data do 1º dia do mês (no trimestre móvel, o último mês do trimestre).
+    - **Impacto de cada grupo no IPCA do mês** = peso × variação ÷ 100 (convenção do IBGE). Conferência: a soma dos 9 impactos bate com o índice geral (teste de contrato). O IPCA geral de 12 meses do SIDRA (4,63%) bate com a série 13522 do Banco Central.
+    - **Só descreve o dado:** as frases dizem qual grupo mais pressionou ou aliviou e qual mais ou menos subiu, sem causa nem projeção. As barras são neutras (inflação subir não é "verde") e partem do centro quando há grupos negativos.
+    - **Saúde:** IPCA por grupo com no máximo 80 dias; desemprego com no máximo 120 (o trimestre móvel sai com cerca de 2 meses de atraso). Fonte e período visíveis em cada card ("IPCA · outubro de 2026 · Fonte: IBGE").
+    - **Deploy:** o workflow passa a coletar também em `push` e no CI (antes só reexportava). Assim, uma fonte nova tem dados já no primeiro deploy, sem esperar a coleta noturna.
+    - **Celular:** a barra fica numa linha própria, com a largura toda, embaixo do nome; na web, em três colunas.
+
 ## Adaptações em relação ao mockup
 
 - **Tela de ativo:** no lugar do eyebrow "RADAR FINANCEIRO" há o link "‹ BRASIL / MUNDO / CRIPTO", com o mesmo estilo (12px, 600, cor positiva) e alvo de toque de 44px. Sem ele, não haveria como voltar à lista.

@@ -19,7 +19,7 @@
 ## O que tem
 
 - **Painel:** pulso do mercado (Ibovespa, S&P 500, Dow Jones, dólar e euro); sua carteira com desempenho base 100 contra o Ibovespa e gráfico de risco × retorno; SELIC, CDI e IPCA do Banco Central.
-- **Brasil:** 10 ações da B3, evolução do Ibovespa e tela de cada ativo com período Hoje / 7d / 30d / 90d / 1 ano.
+- **Brasil:** 10 ações da B3, evolução do Ibovespa e tela de cada ativo com período Hoje / 7d / 30d / 90d / 1 ano; economia brasileira com SELIC, CDI, **inflação por grupo** e **desemprego** (IBGE).
 - **Mundo:** 10 ações globais, dólar e euro contra o real, ouro, petróleo WTI, S&P 500 e Dow Jones.
 - **Cripto:** Bitcoin e Ethereum (preço, variação, máxima, mínima, volatilidade) e comparação base 100.
 - **Entenda o mercado:** glossário com 25 termos, busca e filtro por categoria.
@@ -80,6 +80,7 @@ Para cada ativo, com a janela em **dias corridos** contada a partir da última d
 
 - **Yahoo Finance** (biblioteca `yfinance`): ações, índices, câmbio, commodities e cripto. Fechamento ajustado.
 - **Banco Central do Brasil, SGS:** SELIC meta (432), SELIC diária (11), CDI (4389), IPCA mensal (433) e IPCA 12 meses (13522).
+- **IBGE, SIDRA:** IPCA por grupo (tabela 7060) e taxa de desocupação da PNAD Contínua (tabela 6381). API pública, sem chave.
 
 Os dados são atualizados uma vez por dia útil, após o fechamento. **Não são em tempo real** e não constituem recomendação de investimento.
 
